@@ -1,6 +1,6 @@
 <!-- 
-Artifacts Showcase - Version 0.0.32
-Menu with Background Stars & Nebula
+Artifacts Showcase - Version 0.0.35
+Simplified Performance-Optimized Version
 -->
 
 <!DOCTYPE html>
@@ -112,26 +112,6 @@ Menu with Background Stars & Nebula
       to { opacity: 1; transform: translateY(0); }
     }
     
-    /* Debug console - COMPACT BOTTOM VERSION */
-    #debug-console {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      width: calc(100% - 20px);
-      height: 3.5em;
-      background: rgba(0,20,0,0.9);
-      color: #00ff00;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      padding: 5px;
-      border: 1px solid #00aa00;
-      z-index: 100;
-      overflow-y: auto;
-      border-radius: 3px;
-      box-shadow: 0 0 10px rgba(0,255,0,0.3);
-      pointer-events: none;
-    }
-    
     @media (max-width: 768px) {
       .projects { 
         gap: 2rem; 
@@ -155,10 +135,9 @@ Menu with Background Stars & Nebula
 </head>
 <body>
   <div id="milkyway"></div>
-  <div id="debug-console">[INIT] Debug console active...</div>
   
   <div class="overlay">
-    <h1 class="title">ARTIFACTS SHOWCASE</h1>
+    <h1 class="title">ARTIFACTS</h1>
     <div class="projects">
       <div class="project-card" onclick="showArtifact(1)" id="card-1">
         <div class="project-icon" id="icon-1"></div>
@@ -182,138 +161,63 @@ Menu with Background Stars & Nebula
     let projectRenderers = {};
     let projectMeshes = {};
     let time = 0;
-    let nebulaPoints = null;
     let hoverEffects = {};
-    let debugConsole = document.getElementById('debug-console');
-    
-    // Debug logging function
-    function logMessage(message) {
-      console.log(`[COSMIC] ${message}`);
-      if (debugConsole) {
-        const timestamp = new Date().toLocaleTimeString();
-        debugConsole.innerHTML += `[${timestamp}] ${message}<br>`;
-        debugConsole.scrollTop = debugConsole.scrollHeight;
-      }
-    }
     
     // Show artifact function
     function showArtifact(id) {
-      logMessage(`Artifact ${id} selected`);
-      alert(`Accessing Artifact ${id}: Prepare for dimensional shift...`);
+      alert(`Accessing Artifact ${id}: Placeholder for link...`);
     }
     
-    // Hide loading screen
-    function hideLoadingScreen() {
-      logMessage("Hiding loading screen...");
-      const overlay = document.querySelector('.overlay');
-      overlay.style.opacity = '1';
-      logMessage("Main interface visible");
-    }
-    
-    // Create simulated Hubble nebula by sampling every 2nd pixel
-    function createSimulatedHubbleNebula() {
-      logMessage("Creating simulated Hubble nebula...");
-      
+    // Create simple nebula background
+    function createSimpleNebula() {
       try {
         const container = document.getElementById('milkyway');
-        if (!container) {
-          logMessage("ERROR: Milkyway container not found!");
-          return false;
-        }
+        if (!container) return false;
         
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
-        logMessage("Three.js renderer initialized");
         
-        // Create a canvas to simulate the Hubble image
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 400;
-        canvas.height = 400;
-        
-        // Draw a simulated Hubble nebula
-        // Red regions
-        ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
-        for (let i = 0; i < 200; i++) {
-          const x = Math.random() * canvas.width;
-          const y = Math.random() * canvas.height;
-          const radius = 20 + Math.random() * 30;
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        
-        // Blue regions
-        ctx.fillStyle = 'rgba(50, 100, 255, 0.7)';
-        for (let i = 0; i < 150; i++) {
-          const x = Math.random() * canvas.width;
-          const y = Math.random() * canvas.height;
-          const radius = 15 + Math.random() * 25;
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        
-        // Green regions
-        ctx.fillStyle = 'rgba(50, 200, 100, 0.6)';
-        for (let i = 0; i < 100; i++) {
-          const x = Math.random() * canvas.width;
-          const y = Math.random() * canvas.height;
-          const radius = 10 + Math.random() * 20;
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        
-        // Get image data
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        // Sample every 2nd pixel to create 3D points
+        // Create nebula points
         const positions = [];
         const colors = [];
         const sizes = [];
         
-        for (let y = 0; y < canvas.height; y += 2) {
-          for (let x = 0; x < canvas.width; x += 2) {
-            const index = (y * canvas.width + x) * 4;
-            
-            // Skip transparent pixels
-            if (data[index + 3] === 0) continue;
-            
-            // Convert 2D coordinates to 3D space
-            const posX = (x / canvas.width - 0.5) * 800;
-            const posY = (y / canvas.height - 0.5) * 800;
-            const posZ = (Math.random() - 0.5) * 150; // Add depth
-            
-            positions.push(posX, posY, posZ);
-            
-            // Use pixel color with some variation
-            const r = data[index] / 255;
-            const g = data[index + 1] / 255;
-            const b = data[index + 2] / 255;
-            
-            colors.push(r, g, b);
-            
-            // Variable sizes for organic look
-            sizes.push(2 + Math.random() * 2);
+        // Generate nebula points
+        for (let i = 0; i < 3000; i++) {
+          // Position
+          const posX = (Math.random() - 0.5) * 800;
+          const posY = (Math.random() - 0.5) * 800;
+          const posZ = (Math.random() - 0.5) * 200;
+          positions.push(posX, posY, posZ);
+          
+          // Color (Hubble-like colors)
+          const colorType = Math.random();
+          if (colorType < 0.4) {
+            // Red
+            colors.push(1.0, 0.3, 0.3);
+          } else if (colorType < 0.7) {
+            // Blue
+            colors.push(0.3, 0.6, 1.0);
+          } else {
+            // Green
+            colors.push(0.3, 1.0, 0.6);
           }
+          
+          // Size
+          sizes.push(2 + Math.random() * 2);
         }
         
-        // Create buffer geometry
-        const nebulaGeometry = new THREE.BufferGeometry();
-        nebulaGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        nebulaGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        nebulaGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+        // Create geometry and material
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
         
-        // Create material
-        const nebulaMaterial = new THREE.PointsMaterial({
+        const material = new THREE.PointsMaterial({
           size: 2,
           vertexColors: true,
           transparent: true,
@@ -322,13 +226,11 @@ Menu with Background Stars & Nebula
           blending: THREE.AdditiveBlending
         });
         
-        // Create points
-        const nebulaCloud = new THREE.Points(nebulaGeometry, nebulaMaterial);
-        scene.add(nebulaCloud);
-        logMessage(`Created simulated nebula with ${positions.length / 3} points`);
+        const nebula = new THREE.Points(geometry, material);
+        scene.add(nebula);
         
         // Add background stars
-        createBackgroundStars();
+        createStars();
         
         camera.position.z = 300;
         
@@ -337,67 +239,47 @@ Menu with Background Stars & Nebula
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(window.innerWidth, window.innerHeight);
-          logMessage("Window resized, renderer updated");
         });
         
-        logMessage("Simulated Hubble nebula initialization complete");
         return true;
       } catch (error) {
-        logMessage(`ERROR in createSimulatedHubbleNebula: ${error.message}`);
         return false;
       }
     }
     
     // Create background stars
-    function createBackgroundStars() {
-      logMessage("Creating background starfield...");
+    function createStars() {
+      const positions = [];
+      const colors = [];
+      const sizes = [];
       
-      const starsGeometry = new THREE.BufferGeometry();
-      const starCount = 8000;
-      const positions = new Float32Array(starCount * 3);
-      const colors = new Float32Array(starCount * 3);
-      const sizes = new Float32Array(starCount);
-      
-      for (let i = 0; i < starCount; i++) {
-        const i3 = i * 3;
-        
-        // Galactic distribution
+      for (let i = 0; i < 5000; i++) {
+        // Position
         const radius = Math.sqrt(Math.random()) * 1200;
         const angle = Math.random() * Math.PI * 2;
         const height = (Math.random() - 0.5) * 600;
+        positions.push(radius * Math.cos(angle), height, radius * Math.sin(angle));
         
-        positions[i3] = radius * Math.cos(angle);
-        positions[i3 + 1] = height;
-        positions[i3 + 2] = radius * Math.sin(angle);
-        
-        // Particle sizes (0.5 to 1.5 pixels)
-        sizes[i] = 0.5 + Math.random() * 1.0;
-        
-        // Realistic star colors
+        // Color (star colors)
         const colorType = Math.random();
         if (colorType < 0.7) {
-          // White-blue stars
-          colors[i3] = 0.9 + Math.random() * 0.1;
-          colors[i3 + 1] = 0.9 + Math.random() * 0.1;
-          colors[i3 + 2] = 1.0;
+          colors.push(1.0, 1.0, 1.0); // White
         } else if (colorType < 0.85) {
-          // Blue stars
-          colors[i3] = 0.7 + Math.random() * 0.3;
-          colors[i3 + 1] = 0.8 + Math.random() * 0.2;
-          colors[i3 + 2] = 1.0;
+          colors.push(0.8, 0.9, 1.0); // Blue-white
         } else {
-          // Orange stars
-          colors[i3] = 1.0;
-          colors[i3 + 1] = 0.7 + Math.random() * 0.3;
-          colors[i3 + 2] = 0.5 + Math.random() * 0.2;
+          colors.push(1.0, 0.9, 0.7); // Yellow-orange
         }
+        
+        // Size
+        sizes.push(0.5 + Math.random() * 1.0);
       }
       
-      starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
       
-      const starsMaterial = new THREE.PointsMaterial({
+      const material = new THREE.PointsMaterial({
         size: 1.0,
         vertexColors: true,
         transparent: true,
@@ -406,29 +288,22 @@ Menu with Background Stars & Nebula
         blending: THREE.AdditiveBlending
       });
       
-      const starField = new THREE.Points(starsGeometry, starsMaterial);
-      scene.add(starField);
-      logMessage("Background starfield created");
+      const stars = new THREE.Points(geometry, material);
+      scene.add(stars);
     }
     
-    // Create Project Icons with enhanced geometry
+    // Create Project Icons
     function createProjectIcons() {
-      logMessage("Creating enhanced 3D project icons...");
       createProjectIcon('icon-1', 'icosahedron', 0xff6600); // Orange
       createProjectIcon('icon-2', 'torus', 0x0096D6);      // Blue
       createProjectIcon('icon-3', 'dodecahedron', 0x9932cc); // Purple
-      logMessage("Project icons creation initiated");
     }
     
     // Create Individual Project Icon
     function createProjectIcon(containerId, geometryType, color) {
       try {
-        logMessage(`Creating ${geometryType} icon (${containerId})...`);
         const container = document.getElementById(containerId);
-        if (!container) {
-          logMessage(`ERROR: Container ${containerId} not found!`);
-          return;
-        }
+        if (!container) return;
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
@@ -437,7 +312,6 @@ Menu with Background Stars & Nebula
         renderer.setSize(150, 150);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
-        logMessage(`${containerId} renderer attached`);
         
         // Geometry
         let geometry;
@@ -468,19 +342,14 @@ Menu with Background Stars & Nebula
         
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
-        logMessage(`${geometryType} geometry created`);
         
-        // Enhanced lighting
+        // Lighting
         const ambientLight = new THREE.AmbientLight(0x404040, 2.2);
         scene.add(ambientLight);
         
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.3);
         directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
-        
-        const pointLight = new THREE.PointLight(0xffffff, 0.5);
-        pointLight.position.set(-3, -3, 3);
-        scene.add(pointLight);
         
         camera.position.z = 6;
         
@@ -492,7 +361,6 @@ Menu with Background Stars & Nebula
         // Add hover effect tracking
         hoverEffects[containerId] = { 
           isHovered: false,
-          isTouched: false,
           swooshStartTime: 0,
           swooshActive: false,
           startRotation: { x: 0, y: 0, z: 0 },
@@ -500,14 +368,13 @@ Menu with Background Stars & Nebula
           randomTwist: { x: 0, y: 0, z: 0 }
         };
         
-        logMessage(`${containerId} icon ready with hover/touch effects`);
       } catch (error) {
-        logMessage(`ERROR creating ${containerId}: ${error.message}`);
+        console.log(`ERROR creating ${containerId}: ${error.message}`);
       }
     }
     
-    // Start gentle swoosh animation
-    function startGentleSwoosh(containerId) {
+    // Start 5-second rotation
+    function startRotation(containerId) {
       const effect = hoverEffects[containerId];
       if (!effect) return;
       
@@ -523,26 +390,24 @@ Menu with Background Stars & Nebula
         };
       }
       
-      // Gentle random twists
+      // Generate random twists for 5-second animation
       effect.randomTwist = {
-        x: (Math.random() - 0.5) * Math.PI * 1.5,
-        y: (Math.random() - 0.5) * Math.PI * 2,
-        z: (Math.random() - 0.5) * Math.PI * 1
+        x: (Math.random() - 0.5) * Math.PI * 4,
+        y: (Math.random() - 0.5) * Math.PI * 6,
+        z: (Math.random() - 0.5) * Math.PI * 3
       };
       
       effect.targetRotation = {
-        x: effect.startRotation.x + Math.PI * 1.5 + effect.randomTwist.x,
-        y: effect.startRotation.y + Math.PI * 2 + effect.randomTwist.y,
-        z: effect.startRotation.z + Math.PI * 1 + effect.randomTwist.z
+        x: effect.startRotation.x + Math.PI * 2 + effect.randomTwist.x,
+        y: effect.startRotation.y + Math.PI * 3 + effect.randomTwist.y,
+        z: effect.startRotation.z + Math.PI * 1.5 + effect.randomTwist.z
       };
-      
-      logMessage(`Started gentle swoosh for ${containerId}`);
     }
     
     // Animation Loop
     function animate() {
       requestAnimationFrame(animate);
-      time += 0.016; // ~60fps
+      time += 0.016;
       
       // Animate nebula scene
       if (scene) {
@@ -551,9 +416,9 @@ Menu with Background Stars & Nebula
       
       // Camera gentle movement
       if (camera) {
-        camera.position.x = Math.sin(time * 0.03) * 15;
-        camera.position.y = Math.cos(time * 0.02) * 10;
-        camera.lookAt(scene ? scene.position : new THREE.Vector3(0,0,0));
+        camera.position.x = Math.sin(time * 0.03) * 30;
+        camera.position.y = Math.cos(time * 0.02) * 20;
+        camera.lookAt(0, 0, 0);
       }
       
       // Render background
@@ -567,17 +432,17 @@ Menu with Background Stars & Nebula
         const effect = hoverEffects[key];
         
         if (mesh && effect) {
-          // Base gentle rotation when not swooshing
+          // Base gentle rotation when not rotating
           if (!effect.swooshActive) {
             mesh.rotation.x += 0.002;
             mesh.rotation.y += 0.003;
             mesh.rotation.z += 0.001;
           }
           
-          // Handle gentle swoosh animation
+          // Handle 5-second rotation
           if (effect.swooshActive) {
             const elapsed = (Date.now() - effect.swooshStartTime) / 1000;
-            const progress = Math.min(elapsed / 3, 1); // 3-second duration
+            const progress = Math.min(elapsed / 5, 1);
             
             // Smooth easing
             const easedProgress = progress < 0.5 
@@ -589,14 +454,13 @@ Menu with Background Stars & Nebula
             mesh.rotation.y = effect.startRotation.y + (effect.targetRotation.y - effect.startRotation.y) * easedProgress;
             mesh.rotation.z = effect.startRotation.z + (effect.targetRotation.z - effect.startRotation.z) * easedProgress;
             
-            // End swoosh after 3 seconds
+            // End rotation after 5 seconds
             if (progress >= 1) {
               effect.swooshActive = false;
-              logMessage(`Gentle swoosh complete for ${key}`);
               
-              // If still touched/hovered, start another gentle swoosh
-              if (effect.isHovered || effect.isTouched) {
-                startGentleSwoosh(key);
+              // If still hovered, start another rotation
+              if (effect.isHovered) {
+                startRotation(key);
               }
             }
           }
@@ -613,57 +477,57 @@ Menu with Background Stars & Nebula
       });
     }
     
-    // Check if Three.js is loaded
-    function checkThreeJS() {
-      if (typeof THREE !== 'undefined') {
-        logMessage("Three.js loaded successfully - version " + THREE.REVISION);
-        return true;
-      } else {
-        logMessage("ERROR: Three.js not loaded!");
-        return false;
-      }
-    }
-    
     // Initialize everything
     window.addEventListener('load', () => {
-      logMessage("=== ARTIFACTS SHOWCASE v0.0.32 BOOT SEQUENCE ===");
-      logMessage("System initialization started...");
-      
-      // Check Three.js
-      if (!checkThreeJS()) {
-        logMessage("FATAL: Cannot proceed without Three.js");
+      // Check if Three.js is available
+      if (typeof THREE === 'undefined') {
         return;
       }
       
       try {
-        logMessage("Starting simulated Hubble nebula creation...");
-        const sceneSuccess = createSimulatedHubbleNebula();
-        if (!sceneSuccess) {
-          logMessage("WARNING: Failed to create nebula scene");
+        // Create nebula
+        const success = createSimpleNebula();
+        if (success) {
+          // Create project icons after a delay
+          setTimeout(() => {
+            createProjectIcons();
+          }, 800);
+          
+          // Show interface
+          setTimeout(() => {
+            document.querySelector('.overlay').style.opacity = '1';
+          }, 1000);
+          
+          // Start animation
+          animate();
         }
-        logMessage("Nebula scene systems online");
-        
-        setTimeout(() => {
-          logMessage("Starting project icons creation...");
-          createProjectIcons();
-          logMessage("Project interface ready");
-        }, 800);
-        
-        // Hide loading and show main interface
-        logMessage("Starting UI transition sequence...");
-        hideLoadingScreen();
-        
-        // Start animation
-        logMessage("Animation engine starting...");
-        animate();
-        
-        logMessage("=== ARTIFACTS SHOWCASE BOOT COMPLETE ===");
-        logMessage("All systems nominal - Welcome to the Universe!");
-        
       } catch (error) {
-        logMessage(`FATAL BOOT ERROR: ${error.message}`);
-        logMessage("Stack trace: " + error.stack);
+        console.log("Initialization error:", error);
       }
+    });
+    
+    // Setup hover events
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        Object.keys(projectScenes).forEach(key => {
+          const card = document.getElementById(key.replace('icon', 'card'));
+          if (card) {
+            // Mouse events
+            card.addEventListener('mouseenter', () => {
+              if (hoverEffects[key]) {
+                hoverEffects[key].isHovered = true;
+                startRotation(key);
+              }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+              if (hoverEffects[key]) {
+                hoverEffects[key].isHovered = false;
+              }
+            });
+          }
+        });
+      }, 2000);
     });
   </script>
   
@@ -671,3 +535,12 @@ Menu with Background Stars & Nebula
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </body>
 </html>
+
+
+    
+              <script>
+                              
+              </script>
+                        </body>
+                        </html>
+                    

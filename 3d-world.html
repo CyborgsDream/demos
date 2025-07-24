@@ -1,3 +1,11 @@
+
+<!-- 
+3D World Experience - Version 0.0.2
+- Removed corner line elements
+- Updated object materials to use more intense, saturated colors
+- Removed scanline overlay pattern
+- Simplified water material to MeshPhongMaterial for consistency
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +21,6 @@
             box-sizing: border-box;
             touch-action: none;
         }
-        
         body {
             background: #000;
             overflow: hidden;
@@ -26,14 +33,12 @@
             justify-content: center;
             align-items: center;
         }
-        
         #container {
             position: relative;
             width: 100%;
             height: 100%;
             overflow: hidden;
         }
-        
         #loading-screen {
             position: absolute;
             top: 0;
@@ -48,7 +53,6 @@
             z-index: 300;
             transition: opacity 0.5s;
         }
-        
         .loader {
             width: 80px;
             height: 80px;
@@ -58,12 +62,10 @@
             animation: spin 1.5s linear infinite;
             margin-bottom: 30px;
         }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .loading-text {
             font-size: 24px;
             color: #00d9ff;
@@ -71,13 +73,11 @@
             letter-spacing: 2px;
             animation: pulse 2s infinite;
         }
-        
         @keyframes pulse {
             0% { opacity: 0.6; }
             50% { opacity: 1; }
             100% { opacity: 0.6; }
         }
-        
         #world-title {
             position: absolute;
             top: 15px;
@@ -93,12 +93,10 @@
             font-weight: bold;
             animation: title-glow 2s infinite alternate;
         }
-        
         @keyframes title-glow {
             0% { text-shadow: 0 0 10px #00aaff; }
             100% { text-shadow: 0 0 20px #00aaff, 0 0 30px #00aaff; }
         }
-        
         #controls-info {
             position: absolute;
             bottom: 15px;
@@ -114,20 +112,17 @@
             border-top: 1px solid #00d9ff;
             border-bottom: 1px solid #00d9ff;
         }
-        
         .control-icons {
             display: flex;
             justify-content: center;
             margin-top: 8px;
             gap: 15px;
         }
-        
         .icon {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        
         .icon-box {
             width: 40px;
             height: 40px;
@@ -139,17 +134,14 @@
             align-items: center;
             margin-bottom: 5px;
         }
-        
         .icon-box span {
             font-size: 20px;
             color: #00d9ff;
         }
-        
         .icon-label {
             font-size: 12px;
             text-shadow: 0 0 3px #00aaff;
         }
-        
         #orientation-message {
             position: absolute;
             top: 0;
@@ -167,18 +159,15 @@
             color: #fffc00;
             text-shadow: 0 0 10px #00aaff;
         }
-        
         #orientation-message h2 {
             font-size: 28px;
             margin-bottom: 20px;
         }
-        
         #orientation-message p {
             font-size: 18px;
             margin-bottom: 30px;
             max-width: 80%;
         }
-        
         #fullscreen-btn {
             background: rgba(0, 100, 200, 0.7);
             border: 2px solid #00d9ff;
@@ -192,12 +181,10 @@
             box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
             transition: all 0.3s;
         }
-        
         #fullscreen-btn:hover {
             background: rgba(0, 150, 255, 0.9);
             transform: scale(1.05);
         }
-        
         #gyro-indicator {
             position: absolute;
             top: 15px;
@@ -210,20 +197,7 @@
             z-index: 100;
             display: none;
         }
-        
-        .scanlines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0, 0, 0, 0) 50%, 
-                         rgba(0, 30, 60, 0.1) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 50;
-        }
-        
+        /* REMOVED: .scanlines { ... } */
         .vignette {
             position: absolute;
             top: 0;
@@ -234,7 +208,6 @@
             pointer-events: none;
             z-index: 50;
         }
-        
         #mobile-controls {
             position: absolute;
             bottom: 80px;
@@ -243,7 +216,6 @@
             display: none;
             gap: 10px;
         }
-        
         .mobile-btn {
             width: 60px;
             height: 60px;
@@ -258,81 +230,38 @@
             box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
             user-select: none;
         }
-        
-        .corner {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            z-index: 60;
-        }
-        
-        .corner-tl {
-            top: 10px;
-            left: 10px;
-            border-top: 2px solid #00d9ff;
-            border-left: 2px solid #00d9ff;
-        }
-        
-        .corner-tr {
-            top: 10px;
-            right: 10px;
-            border-top: 2px solid #00d9ff;
-            border-right: 2px solid #00d9ff;
-        }
-        
-        .corner-bl {
-            bottom: 10px;
-            left: 10px;
-            border-bottom: 2px solid #00d9ff;
-            border-left: 2px solid #00d9ff;
-        }
-        
-        .corner-br {
-            bottom: 10px;
-            right: 10px;
-            border-bottom: 2px solid #00d9ff;
-            border-right: 2px solid #00d9ff;
-        }
-        
+        /* REMOVED: .corner { ... } styles */
         @media (max-width: 768px) {
             #world-title {
                 font-size: 20px;
                 top: 10px;
             }
-            
             #controls-info {
                 font-size: 14px;
                 padding: 8px;
             }
-            
             .icon-box {
                 width: 35px;
                 height: 35px;
             }
-            
             .icon-box span {
                 font-size: 16px;
             }
-            
             .icon-label {
                 font-size: 10px;
             }
         }
-        
         @media (max-width: 480px) {
             #world-title {
                 font-size: 18px;
                 letter-spacing: 2px;
             }
-            
             #controls-info {
                 bottom: 10px;
             }
-            
             .control-icons {
                 gap: 10px;
             }
-            
             .loading-text {
                 font-size: 20px;
             }
@@ -341,18 +270,12 @@
 </head>
 <body>
     <div id="container">
-        <div class="corner corner-tl"></div>
-        <div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div>
-        <div class="corner corner-br"></div>
-        
+        <!-- REMOVED: <div class="corner corner-tl"></div> ... -->
         <div id="loading-screen">
             <div class="loader"></div>
             <div class="loading-text">INITIALIZING 3D WORLD</div>
         </div>
-        
         <div id="world-title">3D WORLD EXPERIENCE</div>
-        
         <div id="controls-info">
             <div id="control-text">Desktop: Mouse controls | Mobile: Gyroscope</div>
             <div class="control-icons">
@@ -376,41 +299,33 @@
                 </div>
             </div>
         </div>
-        
         <div id="orientation-message">
             <h2>PLEASE ROTATE YOUR DEVICE</h2>
             <p>For the best experience, please rotate your phone to landscape mode</p>
             <button id="fullscreen-btn">ENTER FULLSCREEN</button>
         </div>
-        
         <div id="gyro-indicator">GYROSCOPE: ACTIVE</div>
-        
         <div id="mobile-controls">
             <div class="mobile-btn" id="zoom-in">+</div>
             <div class="mobile-btn" id="zoom-out">-</div>
         </div>
-        
-        <div class="scanlines"></div>
+        <!-- REMOVED: <div class="scanlines"></div> -->
         <div class="vignette"></div>
     </div>
-
     <script>
         // Initialize Three.js scene
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x001833);
         scene.fog = new THREE.FogExp2(0x336688, 0.001);
-        
         // Camera setup
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 15, 30);
-        
         // Renderer setup
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         document.getElementById('container').appendChild(renderer.domElement);
-        
         // Orbit controls for desktop
         let controls;
         if (!isMobile()) {
@@ -424,68 +339,69 @@
             controls.minPolarAngle = Math.PI/6;
             controls.maxPolarAngle = Math.PI/2.2;
         }
-        
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
+        // Lighting - Increased intensity to better showcase shiny materials
+        const ambientLight = new THREE.AmbientLight(0x606060, 1.5); // Increased intensity
         scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-        directionalLight.position.set(1, 1, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); // Increased intensity
+        directionalLight.position.set(50, 100, 50); // Position for even lighting
         directionalLight.castShadow = true;
         scene.add(directionalLight);
-        
-        // Create optimized terrain with floating islands
-        function createTerrain() {
-            // Main ground
-            const groundGeometry = new THREE.PlaneGeometry(200, 200, 25, 25);
-            const groundMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x2d5a27,
-                roughness: 0.9,
-                metalness: 0.1
+
+        // --- Material Helper Function ---
+        // Creates a shiny MeshPhongMaterial similar to the project showcase
+        function createShowcasePhongMaterial(baseColor, shininess = 90, emissiveIntensity = 0.15) {
+            return new THREE.MeshPhongMaterial({
+                color: baseColor,
+                specular: 0xffffff,           // Bright white specular highlight
+                shininess: shininess,         // High shininess for tight, bright highlights
+                emissive: baseColor,          // Use base color for emissive
+                emissiveIntensity: emissiveIntensity, // Subtle glow
+                // side defaults to THREE.FrontSide
             });
-            
+        }
+
+        // --- Scene Creation Functions ---
+        function createTerrain() {
+            const groundGeometry = new THREE.PlaneGeometry(200, 200, 25, 25);
+            // Changed to a more intense green
+            const groundMaterial = createShowcasePhongMaterial(0x32CD32, 80, 0.1); // Lime Green
             const ground = new THREE.Mesh(groundGeometry, groundMaterial);
             ground.rotation.x = -Math.PI / 2;
             ground.position.y = -5;
             ground.receiveShadow = true;
             scene.add(ground);
-            
-            // Floating islands
+
             createFloatingIsland(-30, 20, -40, 12);
             createFloatingIsland(40, 30, 30, 15);
             createFloatingIsland(0, 40, 0, 18);
-            
             return ground;
         }
-        
+
         function createFloatingIsland(x, y, z, size) {
             const group = new THREE.Group();
-            
+
             // Island base
             const islandGeometry = new THREE.CylinderGeometry(size, size * 1.2, 5, 16);
-            const islandMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x7a6b4f,
-                roughness: 0.9
-            });
+            // Changed to a more intense brown/orange
+            const islandMaterial = createShowcasePhongMaterial(0xff6600, 70, 0.1); // Intense Orange
             const island = new THREE.Mesh(islandGeometry, islandMaterial);
             island.position.y = 0;
             island.castShadow = true;
             island.receiveShadow = true;
             group.add(island);
-            
-            // Top surface
+
+            // Top surface - needs DoubleSide for horizontal planes
             const topGeometry = new THREE.CircleGeometry(size * 0.9, 16);
-            const topMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x3d7a37,
-                side: THREE.DoubleSide
-            });
+            // Changed to a different intense green
+            const topMaterial = createShowcasePhongMaterial(0x2e8b57, 75, 0.1); // Sea Green
+            topMaterial.side = THREE.DoubleSide; // Explicitly set side
             const top = new THREE.Mesh(topGeometry, topMaterial);
             top.rotation.x = Math.PI / 2;
             top.position.y = 2.5;
             top.castShadow = true;
             top.receiveShadow = true;
             group.add(top);
-            
+
             // Add trees to the island
             for (let i = 0; i < 5; i++) {
                 const angle = (i / 5) * Math.PI * 2;
@@ -494,98 +410,80 @@
                 const treeZ = Math.sin(angle) * distance;
                 createTree(treeX, 2.5, treeZ, group);
             }
-            
             group.position.set(x, y, z);
             scene.add(group);
-            
             return group;
         }
-        
-        // Create optimized trees
+
         function createTree(x, y, z, parent = scene) {
             const group = new THREE.Group();
-            
+
             // Trunk
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 5, 6);
-            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            // Changed to a more intense brown
+            const trunkMaterial = createShowcasePhongMaterial(0x8b4513, 50, 0.1); // Saddle Brown
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 2.5;
             trunk.castShadow = true;
             group.add(trunk);
-            
+
             // Leaves
             const leavesGeometry = new THREE.ConeGeometry(3, 6, 6);
-            const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
+            // Changed to a more intense green
+            const leavesMaterial = createShowcasePhongMaterial(0x32CD32, 60, 0.1); // Lime Green
             const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
             leaves.position.y = 6;
             leaves.castShadow = true;
             group.add(leaves);
-            
+
             group.position.set(x, y, z);
             parent.add(group);
-            
             return group;
         }
-        
-        // Create optimized rocks
+
         function createRock(x, z, size = 1.5) {
             const group = new THREE.Group();
-            
             const rockGeometry = new THREE.BoxGeometry(size, size/2, size);
-            const rockMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x777777,
-                roughness: 0.8
-            });
-            
+            // Changed to a more intense grey with higher shine/glow
+            const rockMaterial = createShowcasePhongMaterial(0xAAAAAA, 100, 0.2); // Light Grey
             const rock = new THREE.Mesh(rockGeometry, rockMaterial);
             rock.position.y = size/4;
             rock.castShadow = true;
             rock.rotation.y = Math.random() * Math.PI;
             group.add(rock);
-            
             group.position.set(x, 0, z);
             scene.add(group);
-            
             return group;
         }
-        
-        // Create water
+
         function createWater() {
             const waterGeometry = new THREE.PlaneGeometry(300, 300);
-            const waterMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3366cc,
-                transparent: true,
-                opacity: 0.7,
-                roughness: 0.2,
-                metalness: 0.8
-            });
-            
+            // Water with maximum shininess and higher emissive for a glowing water effect
+            // Changed to a more intense blue
+            const waterMaterial = createShowcasePhongMaterial(0x0096D6, 100, 0.25); // Intense Blue
+            waterMaterial.transparent = true;
+            waterMaterial.opacity = 0.7;
+            waterMaterial.side = THREE.DoubleSide; // Explicitly set side
             const water = new THREE.Mesh(waterGeometry, waterMaterial);
             water.rotation.x = -Math.PI / 2;
             water.position.y = -1;
             scene.add(water);
-            
             return water;
         }
-        
-        // Create sky
+
         function createSky() {
             const skyGeometry = new THREE.SphereGeometry(500, 16, 16);
             const skyMaterial = new THREE.MeshBasicMaterial({
                 color: 0x88aaff,
                 side: THREE.BackSide
             });
-            
             const sky = new THREE.Mesh(skyGeometry, skyMaterial);
             scene.add(sky);
-            
             return sky;
         }
-        
-        // Create clouds
+
         function createClouds() {
             const group = new THREE.Group();
-            
             for (let i = 0; i < 15; i++) {
                 const cloudGeometry = new THREE.PlaneGeometry(15, 8);
                 const cloudMaterial = new THREE.MeshBasicMaterial({
@@ -594,7 +492,6 @@
                     opacity: 0.8,
                     side: THREE.DoubleSide
                 });
-                
                 const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
                 cloud.position.set(
                     Math.random() * 200 - 100,
@@ -603,58 +500,53 @@
                 );
                 cloud.rotation.x = Math.PI/2;
                 cloud.rotation.z = Math.random() * Math.PI;
-                
                 group.add(cloud);
             }
-            
             scene.add(group);
             return group;
         }
-        
-        // Create objects
+
+        // --- Create Objects ---
         const terrain = createTerrain();
         const water = createWater();
         const sky = createSky();
         const clouds = createClouds();
-        
+
         // Add trees and rocks to the ground
         for (let i = 0; i < 40; i++) {
             const angle = Math.random() * Math.PI * 2;
             const distance = 10 + Math.random() * 80;
             const x = Math.cos(angle) * distance;
             const z = Math.sin(angle) * distance;
-            
             if (Math.random() > 0.3) {
                 createTree(x, 0, z);
             } else {
                 createRock(x, z, 1 + Math.random() * 2);
             }
         }
-        
+
         // Add a sun
         const sunGeometry = new THREE.SphereGeometry(5, 12, 12);
         const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
         const sun = new THREE.Mesh(sunGeometry, sunMaterial);
         sun.position.set(50, 70, -50);
         scene.add(sun);
-        
+
         // Mobile detection
         function isMobile() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
-        
+
         // Handle orientation changes
         function handleOrientation() {
             const orientationMessage = document.getElementById('orientation-message');
             const controlText = document.getElementById('control-text');
             const gyroIndicator = document.getElementById('gyro-indicator');
             const mobileControls = document.getElementById('mobile-controls');
-            
             if (isMobile()) {
                 controlText.textContent = "Mobile: Tilt device to look around";
                 gyroIndicator.style.display = 'block';
                 mobileControls.style.display = 'flex';
-                
                 // Show orientation message if in portrait mode
                 if (window.innerHeight > window.innerWidth) {
                     orientationMessage.style.display = 'flex';
@@ -663,11 +555,10 @@
                 }
             }
         }
-        
+
         // Fullscreen function
         function enterFullscreen() {
             const elem = document.documentElement;
-            
             if (elem.requestFullscreen) {
                 elem.requestFullscreen();
             } else if (elem.mozRequestFullScreen) { /* Firefox */
@@ -678,7 +569,7 @@
                 elem.msRequestFullscreen();
             }
         }
-        
+
         // Device motion controls for mobile
         function setupDeviceMotion() {
             if (isMobile() && typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
@@ -693,64 +584,59 @@
                 window.addEventListener('deviceorientation', handleDeviceOrientation);
             }
         }
-        
+
         // Handle device orientation
         function handleDeviceOrientation(event) {
             if (!event.alpha) return;
-            
             // Convert degrees to radians
             const alpha = event.alpha * (Math.PI / 180);
             const beta = event.beta * (Math.PI / 180);
             const gamma = event.gamma * (Math.PI / 180);
-            
             // Adjust camera rotation based on device orientation
             camera.rotation.y = -alpha;
             camera.rotation.x = beta - Math.PI/2;
             camera.rotation.z = gamma;
-            
             // Limit vertical rotation
             camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/3, camera.rotation.x));
         }
-        
+
         // Zoom controls for mobile
         document.getElementById('zoom-in').addEventListener('click', () => {
             camera.fov -= 5;
             camera.fov = Math.max(30, camera.fov);
             camera.updateProjectionMatrix();
         });
-        
         document.getElementById('zoom-out').addEventListener('click', () => {
             camera.fov += 5;
             camera.fov = Math.min(100, camera.fov);
             camera.updateProjectionMatrix();
         });
-        
+
         // Animation loop
         let time = 0;
         function animate() {
             requestAnimationFrame(animate);
-            
             time += 0.01;
-            
+
             // Update sun position
             sun.position.x = 60 * Math.cos(time * 0.03);
             sun.position.z = 60 * Math.sin(time * 0.03);
             directionalLight.position.copy(sun.position);
-            
+
             // Update clouds
             clouds.rotation.y += 0.0005;
-            
+
             // Update water
             water.material.opacity = 0.65 + 0.1 * Math.sin(time * 0.5);
-            
+
             // Update controls for desktop
             if (!isMobile() && controls) {
                 controls.update();
             }
-            
+
             renderer.render(scene, camera);
         }
-        
+
         // Handle window resize
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -758,23 +644,22 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             handleOrientation();
         }
-        
+
         // Event listeners
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('orientationchange', handleOrientation);
         document.getElementById('fullscreen-btn').addEventListener('click', enterFullscreen);
-        
+
         // Initialize
         handleOrientation();
         setupDeviceMotion();
-        
+
         // Show loading screen for exactly 1 second
         setTimeout(() => {
             document.getElementById('loading-screen').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('loading-screen').style.display = 'none';
                 animate();
-                
                 // Enter fullscreen on mobile landscape
                 if (isMobile() && window.innerHeight <= window.innerWidth) {
                     enterFullscreen();

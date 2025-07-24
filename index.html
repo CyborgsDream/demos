@@ -1,0 +1,704 @@
+<!-- 
+Project Showcase - Version 0.0.19
+Refined Build: Pixel-perfect universe + natural rotations
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Project Showcase</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Arial, sans-serif; }
+    
+    #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .loading-text { color: #FFA500; font-size: 1.5rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,165,0,0.7); }
+    
+    #milkyway { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+    
+    .overlay { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; color: #fff; text-align: center; opacity: 0; transition: opacity 0.5s ease; }
+    .title { font-size: 3rem; margin-bottom: 2rem; color: #FFA500; text-shadow: 0 0 10px rgba(255,165,0,0.9), 0 0 30px rgba(255,165,0,0.5); letter-spacing: 3px; }
+    .projects { display: flex; gap: 3rem; }
+    .project-card { cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    
+    .project-card:hover { 
+      transform: scale(1.1); 
+      transition: transform 0.2s ease-out; 
+    }
+    
+    .project-icon { 
+      width: 150px; 
+      height: 150px; 
+      margin-bottom: 1rem; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      background: transparent;
+      box-shadow: none;
+      transition: transform 0.2s ease-out;
+    }
+    
+    .project-card:hover .project-icon { 
+      transform: scale(1.1); 
+      transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+    }
+    
+    .project-card span { 
+      font-weight: bold; 
+      color: #fff; 
+      text-shadow: 0 0 5px rgba(255,255,255,0.7); 
+      font-size: 1.1rem; 
+      transition: all 0.2s ease;
+    }
+    
+    .project-card:hover span {
+      text-shadow: 0 0 15px rgba(255,255,255,0.9);
+      transform: translateY(-2px);
+    }
+    
+    /* Debug console - COMPACT BOTTOM VERSION */
+    #debug-console {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      width: calc(100% - 20px);
+      height: 3.5em;
+      background: rgba(0,20,0,0.9);
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 5px;
+      border: 1px solid #00aa00;
+      z-index: 100;
+      overflow-y: auto;
+      border-radius: 3px;
+      box-shadow: 0 0 10px rgba(0,255,0,0.3);
+    }
+    
+    @media (max-width: 768px) {
+      .projects { flex-direction: column; gap: 2rem; }
+      .project-icon { width: 140px; height: 140px; }
+      .title { font-size: 2rem; }
+      #debug-console { 
+        font-size: 9px;
+        height: 3em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading"><div class="loading-text">SYNCHRONIZING WITH THE UNIVERSE...</div></div>
+  <div id="milkyway"></div>
+  <div id="debug-console">[INIT] Debug console active...</div>
+  
+  <div class="overlay">
+    <h1 class="title">PROJECT SHOWCASE</h1>
+    <div class="projects">
+      <div class="project-card" onclick="showProject(1)" id="card-1">
+        <div class="project-icon" id="icon-1"></div>
+        <span>Galaxy Runner</span>
+      </div>
+      <div class="project-card" onclick="showProject(2)" id="card-2">
+        <div class="project-icon" id="icon-2"></div>
+        <span>Quantum Maze</span>
+      </div>
+      <div class="project-card" onclick="showProject(3)" id="card-3">
+        <div class="project-icon" id="icon-3"></div>
+        <span>Neural Drift</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let scene, camera, renderer;
+    let projectScenes = {};
+    let projectRenderers = {};
+    let projectMeshes = {};
+    let time = 0;
+    let hubbleElements = [];
+    let hoverEffects = {};
+    let debugConsole = document.getElementById('debug-console');
+    
+    // Debug logging function
+    function logMessage(message) {
+      console.log(`[COSMIC] ${message}`);
+      if (debugConsole) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugConsole.innerHTML += `[${timestamp}] ${message}<br>`;
+        debugConsole.scrollTop = debugConsole.scrollHeight;
+      }
+    }
+    
+    // Show project function
+    function showProject(id) {
+      logMessage(`Project ${id} selected`);
+      alert(`Launching Project ${id}: Prepare for dimensional shift...`);
+    }
+    
+    // Hide loading screen
+    function hideLoadingScreen() {
+      logMessage("Hiding loading screen...");
+      const loading = document.getElementById('loading');
+      setTimeout(() => {
+        loading.style.opacity = '0';
+        setTimeout(() => {
+          loading.style.display = 'none';
+          document.querySelector('.overlay').style.opacity = '1';
+          logMessage("Main interface visible");
+        }, 500);
+      }, 1000);
+    }
+    
+    // Create enhanced starfield with realistic galaxy structure
+    function createPixelPerfectUniverse() {
+      logMessage("Creating pixel-perfect universe...");
+      
+      try {
+        const container = document.getElementById('milkyway');
+        if (!container) {
+          logMessage("ERROR: Milkyway container not found!");
+          return false;
+        }
+        
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+        logMessage("Three.js renderer initialized");
+        
+        // Galaxy core
+        const coreGeometry = new THREE.SphereGeometry(100, 32, 32);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          emissive: 0xffffff,
+          emissiveIntensity: 0.5,
+          transparent: true,
+          opacity: 0.8
+        });
+        const galaxyCore = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(galaxyCore);
+        logMessage("Galaxy core created");
+        
+        // Spiral arms
+        const armColors = [
+          [0.8, 0.4, 0.9], // Purple
+          [0.3, 0.6, 1.0], // Blue
+          [1.0, 0.5, 0.7], // Pink
+          [0.4, 0.8, 0.9], // Cyan
+          [1.0, 0.7, 0.3]  // Orange
+        ];
+        
+        for (let i = 0; i < 5; i++) {
+          try {
+            const armGeometry = new THREE.BufferGeometry();
+            const particleCount = 5000;
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            for (let j = 0; j < particleCount; j++) {
+              const j3 = j * 3;
+              
+              // Spiral arm distribution
+              const radius = Math.random() * 1000;
+              const angle = Math.random() * Math.PI * 2;
+              const height = (Math.random() - 0.5) * 200;
+              
+              positions[j3] = radius * Math.cos(angle);
+              positions[j3 + 1] = height;
+              positions[j3 + 2] = radius * Math.sin(angle);
+              
+              // Use spiral arm colors
+              const color = new THREE.Color(armColors[i % armColors.length]);
+              colors[j3] = color.r;
+              colors[j3 + 1] = color.g;
+              colors[j3 + 2] = color.b;
+            }
+            
+            armGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            armGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const armMaterial = new THREE.PointsMaterial({
+              size: 1, // 1-pixel stars
+              vertexColors: true,
+              transparent: true,
+              opacity: 0.8,
+              sizeAttenuation: true,
+              blending: THREE.AdditiveBlending
+            });
+            
+            const spiralArm = new THREE.Points(armGeometry, armMaterial);
+            scene.add(spiralArm);
+            logMessage(`Created spiral arm ${i+1}/5`);
+          } catch (error) {
+            logMessage(`Error creating spiral arm ${i+1}: ${error.message}`);
+          }
+        }
+        
+        // Gas clouds
+        for (let i = 0; i < 3; i++) {
+          try {
+            const cloudGeometry = new THREE.BufferGeometry();
+            const particleCount = 2000;
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            const centerX = (Math.random() - 0.5) * 1200;
+            const centerY = (Math.random() - 0.5) * 600;
+            const centerZ = (Math.random() - 0.5) * 400;
+            
+            for (let j = 0; j < particleCount; j++) {
+              const j3 = j * 3;
+              const angle = Math.random() * Math.PI * 2;
+              const radius = Math.random() * 100;
+              const height = (Math.random() - 0.5) * 50;
+              
+              positions[j3] = centerX + Math.cos(angle) * radius;
+              positions[j3 + 1] = centerY + height;
+              positions[j3 + 2] = centerZ + Math.sin(angle) * radius;
+              
+              // Use random nebula colors
+              const nebulaColor = new THREE.Color(
+                Math.random() * 0.8 + 0.2,
+                Math.random() * 0.8 + 0.2,
+                Math.random() * 0.8 + 0.2
+              );
+              colors[j3] = nebulaColor.r;
+              colors[j3 + 1] = nebulaColor.g;
+              colors[j3 + 2] = nebulaColor.b;
+            }
+            
+            cloudGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            cloudGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const cloudMaterial = new THREE.PointsMaterial({
+              size: 1, // 1-pixel particles
+              vertexColors: true,
+              transparent: true,
+              opacity: 0.3,
+              sizeAttenuation: true,
+              blending: THREE.AdditiveBlending
+            });
+            
+            const gasCloud = new THREE.Points(cloudGeometry, cloudMaterial);
+            scene.add(gasCloud);
+            logMessage(`Created gas cloud ${i+1}/3`);
+          } catch (error) {
+            logMessage(`Error creating gas cloud ${i+1}: ${error.message}`);
+          }
+        }
+        
+        // Background stars
+        const starsGeometry = new THREE.BufferGeometry();
+        const starCount = 10000;
+        const positions = new Float32Array(starCount * 3);
+        const colors = new Float32Array(starCount * 3);
+        
+        for (let i = 0; i < starCount; i++) {
+          const i3 = i * 3;
+          
+          // Galactic distribution
+          const radius = Math.random() * 2000;
+          const angle = Math.random() * Math.PI * 2;
+          const height = (Math.random() - 0.5) * 500;
+          
+          positions[i3] = radius * Math.cos(angle);
+          positions[i3 + 1] = height;
+          positions[i3 + 2] = radius * Math.sin(angle);
+          
+          // Realistic star colors
+          const colorType = Math.random();
+          if (colorType < 0.6) {
+            colors[i3] = 0.9 + Math.random() * 0.1;
+            colors[i3 + 1] = 0.9 + Math.random() * 0.1;
+            colors[i3 + 2] = 1.0;
+          } else if (colorType < 0.8) {
+            colors[i3] = 0.7 + Math.random() * 0.3;
+            colors[i3 + 1] = 0.8 + Math.random() * 0.2;
+            colors[i3 + 2] = 1.0;
+          } else {
+            colors[i3] = 1.0;
+            colors[i3 + 1] = 0.8 + Math.random() * 0.2;
+            colors[i3 + 2] = 0.6 + Math.random() * 0.2;
+          }
+        }
+        
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
+        const starsMaterial = new THREE.PointsMaterial({
+          size: 1, // 1-pixel stars
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.9,
+          sizeAttenuation: true,
+          blending: THREE.AdditiveBlending
+        });
+        
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+        logMessage("Starfield created with 10,000 precise stars");
+        
+        camera.position.z = 15;
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          logMessage("Window resized, renderer updated");
+        });
+        
+        logMessage("Pixel-perfect universe initialization complete");
+        return true;
+      } catch (error) {
+        logMessage(`ERROR in createPixelPerfectUniverse: ${error.message}`);
+        return false;
+      }
+    }
+    
+    // Elastic easing function for smoother animations
+    function elasticEase(t) {
+      return t === 0 || t === 1 ? t : 
+        -Math.pow(2, 10 * (t - 1)) * Math.sin((t - 1.1) * 5 * Math.PI);
+    }
+    
+    // Bounce easing function
+    function bounceEase(t) {
+      if (t < 1/2.75) {
+        return 7.5625 * t * t;
+      } else if (t < 2/2.75) {
+        return 7.5625 * (t -= 1.5/2.75) * t + 0.75;
+      } else if (t < 2.5/2.75) {
+        return 7.5625 * (t -= 2.25/2.75) * t + 0.9375;
+      } else {
+        return 7.5625 * (t -= 2.625/2.75) * t + 0.984375;
+      }
+    }
+    
+    // Custom smoother easing
+    function smootherEase(t) {
+      const elastic = elasticEase(t);
+      const bounce = bounceEase(t);
+      const overshoot = Math.sin(t * Math.PI * 2) * 0.1;
+      return elastic * 0.5 + bounce * 0.3 + overshoot * 0.2;
+    }
+    
+    // Create Project Icons with 3D geometry
+    function createProjectIcons() {
+      logMessage("Creating 3D project icons...");
+      createProjectIcon('icon-1', 'icosahedron', 0xff6600);
+      createProjectIcon('icon-2', 'torus', 0x0096D6);
+      createProjectIcon('icon-3', 'octahedron', 0x9932cc);
+      logMessage("Project icons creation initiated");
+    }
+    
+    // Create Individual Project Icon
+    function createProjectIcon(containerId, geometryType, color) {
+      try {
+        logMessage(`Creating ${geometryType} icon (${containerId})...`);
+        const container = document.getElementById(containerId);
+        if (!container) {
+          logMessage(`ERROR: Container ${containerId} not found!`);
+          return;
+        }
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(150, 150);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        logMessage(`${containerId} renderer attached`);
+        
+        // Geometry
+        let geometry;
+        switch(geometryType) {
+          case 'icosahedron':
+            geometry = new THREE.IcosahedronGeometry(2.5, 0);
+            break;
+          case 'torus':
+            geometry = new THREE.TorusGeometry(2.2, 0.7, 8, 16);
+            break;
+          case 'octahedron':
+            geometry = new THREE.OctahedronGeometry(2.5, 0);
+            break;
+          default:
+            geometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+        }
+        
+        const material = new THREE.MeshPhongMaterial({
+          color: color,
+          specular: 0xffffff,
+          shininess: 90,
+          flatShading: geometryType === 'torus',
+          transparent: true,
+          opacity: 0.95,
+          emissive: new THREE.Color(color),
+          emissiveIntensity: 0.1
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        logMessage(`${geometryType} geometry created`);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2.0);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+        
+        camera.position.z = 7;
+        
+        // Store references
+        projectScenes[containerId] = scene;
+        projectRenderers[containerId] = renderer;
+        projectMeshes[containerId] = mesh;
+        
+        // Add hover effect tracking
+        hoverEffects[containerId] = { 
+          isHovered: false,
+          swooshStartTime: 0,
+          swooshActive: false,
+          startRotation: { x: 0, y: 0, z: 0 },
+          targetRotation: { x: 0, y: 0, z: 0 },
+          randomTwist: { x: 0, y: 0, z: 0 },
+          oscillation: { x: 0, y: 0, z: 0 },
+          oscillationSpeed: { x: 0, y: 0, z: 0 }
+        };
+        
+        logMessage(`${containerId} icon ready with hover effects`);
+      } catch (error) {
+        logMessage(`ERROR creating ${containerId}: ${error.message}`);
+      }
+    }
+    
+    // Start smoother 5-second swoosh
+    function startSmootherSwoosh(containerId) {
+      const effect = hoverEffects[containerId];
+      if (!effect) return;
+      
+      effect.swooshStartTime = Date.now();
+      effect.swooshActive = true;
+      
+      const mesh = projectMeshes[containerId];
+      if (mesh) {
+        effect.startRotation = {
+          x: mesh.rotation.x,
+          y: mesh.rotation.y,
+          z: mesh.rotation.z
+        };
+      }
+      
+      // Generate smoother random twists
+      effect.randomTwist = {
+        x: (Math.random() - 0.5) * Math.PI * 2,
+        y: (Math.random() - 0.5) * Math.PI * 3,
+        z: (Math.random() - 0.5) * Math.PI * 1.5
+      };
+      
+      effect.targetRotation = {
+        x: effect.startRotation.x + Math.PI * 2 + effect.randomTwist.x,
+        y: effect.startRotation.y + Math.PI * 3 + effect.randomTwist.y,
+        z: effect.startRotation.z + Math.PI * 1.5 + effect.randomTwist.z
+      };
+      
+      effect.oscillation = {
+        x: Math.random() * 0.3,
+        y: Math.random() * 0.3,
+        z: Math.random() * 0.3
+      };
+      
+      effect.oscillationSpeed = {
+        x: 1 + Math.random() * 2,
+        y: 1 + Math.random() * 2,
+        z: 1 + Math.random() * 2
+      };
+      
+      logMessage(`Started smoother 5-second swoosh for ${containerId}`);
+    }
+    
+    // Animation Loop with all features
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.016; // ~60fps
+      
+      // Animate realistic universe
+      if (scene) {
+        scene.rotation.y += 0.0001;
+      }
+      
+      // Animate gas clouds
+      hubbleElements.forEach(element => {
+        if (element.userData && element.userData.speed) {
+          element.rotateOnAxis(element.userData.rotationAxis, element.userData.speed);
+        }
+      });
+      
+      // Camera subtle movement
+      if (camera) {
+        camera.position.x = Math.sin(time * 0.1) * 3;
+        camera.position.y = Math.cos(time * 0.08) * 2;
+        camera.lookAt(scene ? scene.position : new THREE.Vector3(0,0,0));
+      }
+      
+      // Render background
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+      
+      // Animate project icons with smoother swoosh effects
+      Object.keys(projectMeshes).forEach(key => {
+        const mesh = projectMeshes[key];
+        const effect = hoverEffects[key];
+        
+        if (mesh && effect) {
+          // Base gentle rotation when not swooshing
+          if (!effect.swooshActive) {
+            mesh.rotation.x += 0.003;
+            mesh.rotation.y += 0.005;
+            mesh.rotation.z += 0.002;
+          }
+          
+          // Handle smoother 5-second swoosh animation
+          if (effect.swooshActive) {
+            const elapsed = (Date.now() - effect.swooshStartTime) / 1000;
+            const progress = Math.min(elapsed / 5, 1);
+            
+            // Apply smoother custom easing
+            const easedProgress = smootherEase(progress);
+            
+            // Calculate current rotation with easing
+            mesh.rotation.x = effect.startRotation.x + (effect.targetRotation.x - effect.startRotation.x) * easedProgress;
+            mesh.rotation.y = effect.startRotation.y + (effect.targetRotation.y - effect.startRotation.y) * easedProgress;
+            mesh.rotation.z = effect.startRotation.z + (effect.targetRotation.z - effect.startRotation.z) * easedProgress;
+            
+            // Add subtle oscillation effects
+            const oscillationIntensity = Math.sin(progress * Math.PI) * 0.2;
+            mesh.rotation.x += Math.sin(time * effect.oscillationSpeed.x) * effect.oscillation.x * oscillationIntensity;
+            mesh.rotation.y += Math.cos(time * effect.oscillationSpeed.y) * effect.oscillation.y * oscillationIntensity;
+            mesh.rotation.z += Math.sin(time * effect.oscillationSpeed.z) * effect.oscillation.z * oscillationIntensity;
+            
+            // End swoosh after 5 seconds
+            if (progress >= 1) {
+              effect.swooshActive = false;
+              logMessage(`Smoother swoosh complete for ${key}`);
+              
+              // If still hovered, start another smoother swoosh
+              if (effect.isHovered) {
+                startSmootherSwoosh(key);
+              }
+            }
+          }
+        }
+        
+        const renderer = projectRenderers[key];
+        const scene = projectScenes[key];
+        const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+        camera.position.z = 7;
+        
+        if (renderer && scene) {
+          renderer.render(scene, camera);
+        }
+      });
+    }
+    
+    // Check if Three.js is loaded
+    function checkThreeJS() {
+      if (typeof THREE !== 'undefined') {
+        logMessage("Three.js loaded successfully - version " + THREE.REVISION);
+        return true;
+      } else {
+        logMessage("ERROR: Three.js not loaded!");
+        return false;
+      }
+    }
+    
+    // Initialize everything
+    window.addEventListener('load', () => {
+      logMessage("=== COSMIC SHOWCASE v0.0.19 BOOT SEQUENCE ===");
+      logMessage("System initialization started...");
+      
+      // Initialize debug console
+      debugConsole = document.getElementById('debug-console');
+      if (debugConsole) {
+        debugConsole.innerHTML = '[BOOT] Cosmic Showcase v0.0.19 initializing...<br>';
+      }
+      
+      logMessage("DOM loaded, beginning Three.js setup...");
+      
+      // Check Three.js
+      if (!checkThreeJS()) {
+        logMessage("FATAL: Cannot proceed without Three.js");
+        return;
+      }
+      
+      try {
+        logMessage("Starting pixel-perfect universe creation...");
+        const universeSuccess = createPixelPerfectUniverse();
+        if (!universeSuccess) {
+          logMessage("WARNING: Failed to create advanced universe, falling back to basic version");
+        }
+        logMessage("Universe systems online");
+        
+        setTimeout(() => {
+          logMessage("Starting project icons creation...");
+          createProjectIcons();
+          logMessage("Project interface ready");
+        }, 500);
+        
+        // Setup hover events
+        setTimeout(() => {
+          logMessage("Setting up hover event listeners...");
+          Object.keys(projectScenes).forEach(key => {
+            const card = document.getElementById(key.replace('icon', 'card'));
+            if (card) {
+              card.addEventListener('mouseenter', () => {
+                if (hoverEffects[key]) {
+                  hoverEffects[key].isHovered = true;
+                  startSmootherSwoosh(key);
+                  logMessage(`Hover enter: ${key}`);
+                }
+              });
+              
+              card.addEventListener('mouseleave', () => {
+                if (hoverEffects[key]) {
+                  hoverEffects[key].isHovered = false;
+                  logMessage(`Hover leave: ${key}`);
+                }
+              });
+            }
+          });
+          logMessage("Hover event system active");
+        }, 1000);
+        
+        // Hide loading and show main interface
+        logMessage("Starting UI transition sequence...");
+        hideLoadingScreen();
+        
+        // Start animation
+        logMessage("Animation engine starting...");
+        animate();
+        
+        logMessage("=== COSMIC SHOWCASE BOOT COMPLETE ===");
+        logMessage("All systems nominal - Welcome to the Universe!");
+        
+      } catch (error) {
+        logMessage(`FATAL BOOT ERROR: ${error.message}`);
+        logMessage("Stack trace: " + error.stack);
+      }
+    });
+  </script>
+  
+  <!-- Load Three.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</body>
+</html>

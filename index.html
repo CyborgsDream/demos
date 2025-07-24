@@ -1,13 +1,15 @@
 <!-- 
-Artifacts Showcase - Version 0.0.36
-Enhanced Console with Fading Message Queue
+Artifacts Showcase - Version 0.0.38
+Improved Console with Smooth Scrolling Log
 -->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Artifacts Showcase</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,6 +19,7 @@ Enhanced Console with Fading Message Queue
       overflow: hidden; 
       background: #000; 
       font-family: 'Segoe UI', Arial, sans-serif; 
+      touch-action: manipulation;
     }
     
     #milkyway { 
@@ -112,13 +115,13 @@ Enhanced Console with Fading Message Queue
       to { opacity: 1; transform: translateY(0); }
     }
     
-    /* Enhanced Debug Console - No Border, Fading Messages */
+    /* Improved Debug Console - Scroll Log Behavior */
     #debug-console {
       position: fixed;
       bottom: 10px;
       left: 10px;
       width: calc(100% - 20px);
-      max-height: 120px; /* Height for 3 lines */
+      max-height: 120px; /* Height for 4 lines */
       background: rgba(0,20,0,0.9);
       color: #00ff00;
       font-family: 'Courier New', monospace;
@@ -132,36 +135,32 @@ Enhanced Console with Fading Message Queue
     
     .console-message {
       opacity: 1;
-      transition: opacity 2s ease-out;
       margin: 2px 0;
       line-height: 1.2;
+      transition: opacity 3s ease-out;
     }
     
-    .console-message.fading {
-      opacity: 0;
-    }
-    
+    /* Mobile Responsive Styling */
     @media (max-width: 768px) {
       .projects { 
-        gap: 2rem; 
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 1.5rem; 
+        flex-wrap: nowrap;
       }
       .project-icon { 
-        width: 130px; 
-        height: 130px; 
-        margin-bottom: 0.8rem;
+        width: 120px; 
+        height: 120px; 
+        margin-bottom: 0.6rem;
       }
       .title { 
-        font-size: 2.2rem; 
-        margin-bottom: 1.5rem;
+        font-size: 2rem; 
+        margin-bottom: 1.2rem;
       }
       .project-card span { 
-        font-size: 1rem; 
+        font-size: 0.9rem; 
       }
       #debug-console { 
         font-size: 9px;
-        max-height: 90px; /* Height for 3 lines on mobile */
+        max-height: 90px; /* Height for 4 lines on mobile */
       }
     }
   </style>
@@ -197,9 +196,8 @@ Enhanced Console with Fading Message Queue
     let time = 0;
     let hoverEffects = {};
     let debugConsole = document.getElementById('debug-console');
-    let messageQueue = [];
     
-    // Enhanced debug logging function with fading queue
+    // Improved console logging function - scrolling log behavior
     function logMessage(message) {
       console.log(`[COSMIC] ${message}`);
       
@@ -209,28 +207,31 @@ Enhanced Console with Fading Message Queue
         messageElement.className = 'console-message';
         messageElement.innerHTML = `[${timestamp}] ${message}`;
         
-        // Add to top of console
+        // Add to top (newest first)
         debugConsole.insertBefore(messageElement, debugConsole.firstChild);
         
-        // Add to queue
-        messageQueue.push({
-          element: messageElement,
-          timestamp: Date.now()
-        });
+        // Get all messages
+        const messages = debugConsole.querySelectorAll('.console-message');
         
-        // Start fading after 3 seconds
-        setTimeout(() => {
-          messageElement.classList.add('fading');
-          
-          // Remove from DOM after fade completes
-          setTimeout(() => {
-            if (messageElement.parentNode) {
-              messageElement.parentNode.removeChild(messageElement);
-            }
-            // Remove from queue
-            messageQueue = messageQueue.filter(msg => msg.element !== messageElement);
-          }, 2000); // 2 seconds fade duration
-        }, 3000); // 3 seconds before starting fade
+        // If more than 4 messages, start fading the oldest (topmost)
+        if (messages.length > 4) {
+          const oldestMessage = messages[messages.length - 1];
+          if (!oldestMessage.classList.contains('fading')) {
+            // Start fading after a brief delay
+            setTimeout(() => {
+              if (oldestMessage.parentNode) {
+                oldestMessage.classList.add('fading');
+                
+                // Remove completely after fade completes
+                setTimeout(() => {
+                  if (oldestMessage.parentNode) {
+                    oldestMessage.parentNode.removeChild(oldestMessage);
+                  }
+                }, 3000); // 3 seconds fade duration
+              }
+            }, 100); // Small delay to ensure proper ordering
+          }
+        }
       }
     }
     
@@ -238,6 +239,33 @@ Enhanced Console with Fading Message Queue
     function showArtifact(id) {
       logMessage(`Artifact ${id} selected`);
       alert(`Accessing Artifact ${id}: Placeholder for link...`);
+    }
+    
+    // Force landscape and fullscreen on mobile
+    function forceMobileOptimization() {
+      // Force fullscreen
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(e => {});
+      }
+      
+      // Lock orientation if possible
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(e => {});
+      }
+    }
+    
+    // Create canvas with exact 848x420 resolution
+    function createCanvas() {
+      const container = document.getElementById('milkyway');
+      if (!container) return null;
+      
+      // Create canvas with exact dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = 848;
+      canvas.height = 420;
+      container.appendChild(canvas);
+      
+      return canvas;
     }
     
     // Create simple nebula background
@@ -252,12 +280,12 @@ Enhanced Console with Fading Message Queue
         }
         
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+        camera = new THREE.PerspectiveCamera(75, 848/420, 0.1, 3000);
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(848, 420);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
-        logMessage("Three.js renderer initialized");
+        logMessage("Three.js renderer initialized (848x420)");
         
         // Create nebula points
         const positions = [];
@@ -266,9 +294,9 @@ Enhanced Console with Fading Message Queue
         
         // Generate nebula points
         for (let i = 0; i < 3000; i++) {
-          // Position
+          // Position within canvas bounds
           const posX = (Math.random() - 0.5) * 800;
-          const posY = (Math.random() - 0.5) * 800;
+          const posY = (Math.random() - 0.5) * 400;
           const posZ = (Math.random() - 0.5) * 200;
           positions.push(posX, posY, posZ);
           
@@ -313,12 +341,23 @@ Enhanced Console with Fading Message Queue
         
         camera.position.z = 300;
         
-        // Handle resize
+        // Handle resize to maintain aspect ratio
         window.addEventListener('resize', () => {
-          camera.aspect = window.innerWidth / window.innerHeight;
+          // Maintain 848x420 aspect ratio
+          const windowRatio = window.innerWidth / window.innerHeight;
+          const canvasRatio = 848 / 420;
+          
+          if (windowRatio > canvasRatio) {
+            // Window is wider, fit height
+            renderer.setSize(window.innerHeight * canvasRatio, window.innerHeight);
+          } else {
+            // Window is taller, fit width
+            renderer.setSize(window.innerWidth, window.innerWidth / canvasRatio);
+          }
+          
+          camera.aspect = 848 / 420;
           camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
-          logMessage("Window resized");
+          logMessage("Canvas resized to maintain aspect ratio");
         });
         
         logMessage("Simple nebula initialization complete");
@@ -338,10 +377,10 @@ Enhanced Console with Fading Message Queue
       const sizes = [];
       
       for (let i = 0; i < 5000; i++) {
-        // Position
-        const radius = Math.sqrt(Math.random()) * 1200;
+        // Position within canvas bounds
+        const radius = Math.sqrt(Math.random()) * 1000;
         const angle = Math.random() * Math.PI * 2;
-        const height = (Math.random() - 0.5) * 600;
+        const height = (Math.random() - 0.5) * 500;
         positions.push(radius * Math.cos(angle), height, radius * Math.sin(angle));
         
         // Color (star colors)
@@ -400,7 +439,7 @@ Enhanced Console with Fading Message Queue
         const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(150, 150);
+        renderer.setSize(120, 120); // Smaller for mobile
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
         logMessage(`${containerId} renderer attached`);
@@ -576,8 +615,11 @@ Enhanced Console with Fading Message Queue
     
     // Initialize everything
     window.addEventListener('load', () => {
-      logMessage("=== ARTIFACTS SHOWCASE v0.0.36 BOOT SEQUENCE ===");
+      logMessage("=== ARTIFACTS SHOWCASE v0.0.38 BOOT SEQUENCE ===");
       logMessage("System initialization started...");
+      
+      // Force mobile optimization
+      forceMobileOptimization();
       
       // Check if Three.js is available
       if (typeof THREE === 'undefined') {
@@ -619,14 +661,14 @@ Enhanced Console with Fading Message Queue
       }
     });
     
-    // Setup hover events
+    // Setup hover/touch events
     window.addEventListener('load', () => {
       setTimeout(() => {
-        logMessage("Setting up hover event listeners...");
+        logMessage("Setting up event listeners...");
         Object.keys(projectScenes).forEach(key => {
           const card = document.getElementById(key.replace('icon', 'card'));
           if (card) {
-            // Mouse events
+            // Mouse events for desktop
             card.addEventListener('mouseenter', () => {
               if (hoverEffects[key]) {
                 hoverEffects[key].isHovered = true;
@@ -641,9 +683,29 @@ Enhanced Console with Fading Message Queue
                 logMessage(`Hover leave: ${key}`);
               }
             });
+            
+            // Touch events for mobile
+            card.addEventListener('touchstart', (e) => {
+              e.preventDefault();
+              if (hoverEffects[key]) {
+                hoverEffects[key].isHovered = true;
+                startRotation(key);
+                logMessage(`Touch start: ${key}`);
+              }
+            });
+            
+            card.addEventListener('touchend', (e) => {
+              e.preventDefault();
+              setTimeout(() => {
+                if (hoverEffects[key]) {
+                  hoverEffects[key].isHovered = false;
+                  logMessage(`Touch end: ${key}`);
+                }
+              }, 150);
+            });
           }
         });
-        logMessage("Hover event system active");
+        logMessage("Event system active");
       }, 2000);
     });
   </script>

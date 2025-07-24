@@ -1,6 +1,6 @@
 <!-- 
-Artifacts Showcase - Version 0.0.35
-Simplified Performance-Optimized Version
+Artifacts Showcase - Version 0.0.36
+Enhanced Console with Fading Message Queue
 -->
 
 <!DOCTYPE html>
@@ -112,6 +112,35 @@ Simplified Performance-Optimized Version
       to { opacity: 1; transform: translateY(0); }
     }
     
+    /* Enhanced Debug Console - No Border, Fading Messages */
+    #debug-console {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      width: calc(100% - 20px);
+      max-height: 120px; /* Height for 3 lines */
+      background: rgba(0,20,0,0.9);
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 5px;
+      z-index: 100;
+      overflow: hidden;
+      border-radius: 3px;
+      box-shadow: 0 0 10px rgba(0,255,0,0.3);
+    }
+    
+    .console-message {
+      opacity: 1;
+      transition: opacity 2s ease-out;
+      margin: 2px 0;
+      line-height: 1.2;
+    }
+    
+    .console-message.fading {
+      opacity: 0;
+    }
+    
     @media (max-width: 768px) {
       .projects { 
         gap: 2rem; 
@@ -130,11 +159,16 @@ Simplified Performance-Optimized Version
       .project-card span { 
         font-size: 1rem; 
       }
+      #debug-console { 
+        font-size: 9px;
+        max-height: 90px; /* Height for 3 lines on mobile */
+      }
     }
   </style>
 </head>
 <body>
   <div id="milkyway"></div>
+  <div id="debug-console"></div>
   
   <div class="overlay">
     <h1 class="title">ARTIFACTS</h1>
@@ -162,17 +196,60 @@ Simplified Performance-Optimized Version
     let projectMeshes = {};
     let time = 0;
     let hoverEffects = {};
+    let debugConsole = document.getElementById('debug-console');
+    let messageQueue = [];
+    
+    // Enhanced debug logging function with fading queue
+    function logMessage(message) {
+      console.log(`[COSMIC] ${message}`);
+      
+      if (debugConsole) {
+        const timestamp = new Date().toLocaleTimeString();
+        const messageElement = document.createElement('div');
+        messageElement.className = 'console-message';
+        messageElement.innerHTML = `[${timestamp}] ${message}`;
+        
+        // Add to top of console
+        debugConsole.insertBefore(messageElement, debugConsole.firstChild);
+        
+        // Add to queue
+        messageQueue.push({
+          element: messageElement,
+          timestamp: Date.now()
+        });
+        
+        // Start fading after 3 seconds
+        setTimeout(() => {
+          messageElement.classList.add('fading');
+          
+          // Remove from DOM after fade completes
+          setTimeout(() => {
+            if (messageElement.parentNode) {
+              messageElement.parentNode.removeChild(messageElement);
+            }
+            // Remove from queue
+            messageQueue = messageQueue.filter(msg => msg.element !== messageElement);
+          }, 2000); // 2 seconds fade duration
+        }, 3000); // 3 seconds before starting fade
+      }
+    }
     
     // Show artifact function
     function showArtifact(id) {
+      logMessage(`Artifact ${id} selected`);
       alert(`Accessing Artifact ${id}: Placeholder for link...`);
     }
     
     // Create simple nebula background
     function createSimpleNebula() {
+      logMessage("Creating simple nebula background...");
+      
       try {
         const container = document.getElementById('milkyway');
-        if (!container) return false;
+        if (!container) {
+          logMessage("ERROR: Container not found!");
+          return false;
+        }
         
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
@@ -180,6 +257,7 @@ Simplified Performance-Optimized Version
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
+        logMessage("Three.js renderer initialized");
         
         // Create nebula points
         const positions = [];
@@ -228,6 +306,7 @@ Simplified Performance-Optimized Version
         
         const nebula = new THREE.Points(geometry, material);
         scene.add(nebula);
+        logMessage("Nebula points created (3000 points)");
         
         // Add background stars
         createStars();
@@ -239,16 +318,21 @@ Simplified Performance-Optimized Version
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(window.innerWidth, window.innerHeight);
+          logMessage("Window resized");
         });
         
+        logMessage("Simple nebula initialization complete");
         return true;
       } catch (error) {
+        logMessage(`ERROR creating nebula: ${error.message}`);
         return false;
       }
     }
     
     // Create background stars
     function createStars() {
+      logMessage("Creating background starfield...");
+      
       const positions = [];
       const colors = [];
       const sizes = [];
@@ -290,20 +374,27 @@ Simplified Performance-Optimized Version
       
       const stars = new THREE.Points(geometry, material);
       scene.add(stars);
+      logMessage("Background starfield created (5000 stars)");
     }
     
     // Create Project Icons
     function createProjectIcons() {
+      logMessage("Creating project icons...");
       createProjectIcon('icon-1', 'icosahedron', 0xff6600); // Orange
       createProjectIcon('icon-2', 'torus', 0x0096D6);      // Blue
       createProjectIcon('icon-3', 'dodecahedron', 0x9932cc); // Purple
+      logMessage("Project icons creation initiated");
     }
     
     // Create Individual Project Icon
     function createProjectIcon(containerId, geometryType, color) {
       try {
+        logMessage(`Creating ${geometryType} icon (${containerId})...`);
         const container = document.getElementById(containerId);
-        if (!container) return;
+        if (!container) {
+          logMessage(`ERROR: Container ${containerId} not found!`);
+          return;
+        }
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
@@ -312,6 +403,7 @@ Simplified Performance-Optimized Version
         renderer.setSize(150, 150);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
+        logMessage(`${containerId} renderer attached`);
         
         // Geometry
         let geometry;
@@ -342,6 +434,7 @@ Simplified Performance-Optimized Version
         
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
+        logMessage(`${geometryType} geometry created`);
         
         // Lighting
         const ambientLight = new THREE.AmbientLight(0x404040, 2.2);
@@ -368,8 +461,9 @@ Simplified Performance-Optimized Version
           randomTwist: { x: 0, y: 0, z: 0 }
         };
         
+        logMessage(`${containerId} icon ready`);
       } catch (error) {
-        console.log(`ERROR creating ${containerId}: ${error.message}`);
+        logMessage(`ERROR creating ${containerId}: ${error.message}`);
       }
     }
     
@@ -402,6 +496,8 @@ Simplified Performance-Optimized Version
         y: effect.startRotation.y + Math.PI * 3 + effect.randomTwist.y,
         z: effect.startRotation.z + Math.PI * 1.5 + effect.randomTwist.z
       };
+      
+      logMessage(`Started 5-second rotation for ${containerId}`);
     }
     
     // Animation Loop
@@ -457,6 +553,7 @@ Simplified Performance-Optimized Version
             // End rotation after 5 seconds
             if (progress >= 1) {
               effect.swooshActive = false;
+              logMessage(`5-second rotation complete for ${key}`);
               
               // If still hovered, start another rotation
               if (effect.isHovered) {
@@ -479,36 +576,53 @@ Simplified Performance-Optimized Version
     
     // Initialize everything
     window.addEventListener('load', () => {
+      logMessage("=== ARTIFACTS SHOWCASE v0.0.36 BOOT SEQUENCE ===");
+      logMessage("System initialization started...");
+      
       // Check if Three.js is available
       if (typeof THREE === 'undefined') {
+        logMessage("FATAL: Three.js not loaded!");
         return;
       }
+      
+      logMessage("Three.js loaded successfully");
       
       try {
         // Create nebula
         const success = createSimpleNebula();
         if (success) {
+          logMessage("Nebula background ready");
+          
           // Create project icons after a delay
           setTimeout(() => {
+            logMessage("Starting project icons creation...");
             createProjectIcons();
+            logMessage("Project interface ready");
           }, 800);
           
           // Show interface
           setTimeout(() => {
+            logMessage("Showing main interface...");
             document.querySelector('.overlay').style.opacity = '1';
+            logMessage("Main interface visible");
           }, 1000);
           
           // Start animation
+          logMessage("Animation engine starting...");
           animate();
+          logMessage("=== BOOT COMPLETE ===");
+        } else {
+          logMessage("FATAL: Failed to create nebula background");
         }
       } catch (error) {
-        console.log("Initialization error:", error);
+        logMessage(`FATAL BOOT ERROR: ${error.message}`);
       }
     });
     
     // Setup hover events
     window.addEventListener('load', () => {
       setTimeout(() => {
+        logMessage("Setting up hover event listeners...");
         Object.keys(projectScenes).forEach(key => {
           const card = document.getElementById(key.replace('icon', 'card'));
           if (card) {
@@ -517,16 +631,19 @@ Simplified Performance-Optimized Version
               if (hoverEffects[key]) {
                 hoverEffects[key].isHovered = true;
                 startRotation(key);
+                logMessage(`Hover enter: ${key}`);
               }
             });
             
             card.addEventListener('mouseleave', () => {
               if (hoverEffects[key]) {
                 hoverEffects[key].isHovered = false;
+                logMessage(`Hover leave: ${key}`);
               }
             });
           }
         });
+        logMessage("Hover event system active");
       }, 2000);
     });
   </script>

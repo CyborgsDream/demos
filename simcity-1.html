@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimCity-1 (Tiny Clone)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f1115;
+      color: #e5e7eb;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #171923;
+      border-bottom: 1px solid #222736;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    #topbar .group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      background: #10131a;
+      border: 1px solid #222736;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    #toolbar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #121520;
+      border-bottom: 1px solid #222736;
+      position: sticky;
+      top: 42px;
+      z-index: 9;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #0e111a;
+      border: 1px solid #2a3144;
+      color: #d1d5db;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .tool-btn.active {
+      background: #1b2233;
+      border-color: #3a4763;
+      color: #fff;
+    }
+
+    .tool-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #statusbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #121520cc;
+      border-top: 1px solid #222736;
+      font-size: 12px;
+      z-index: 10;
+    }
+
+    #game {
+      display: block;
+      width: 100vw;
+      height: calc(100vh - 120px);
+      background: #0a0c12;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: crosshair;
+    }
+
+    #help {
+      padding: 8px 12px;
+      background: #0e111a;
+      border-top: 1px solid #222736;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #2a3144;
+      color: #d1d5db;
+      font-weight: 600;
+    }
+
+    .spacer { flex: 1; }
+
+    a.btn-link {
+      color: #8ab4ff;
+      text-decoration: none;
+      border-bottom: 1px dashed #2a3144;
+    }
+
+    a.btn-link:hover { color: #b3d1ff; }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <div class="group" id="fundsGroup">💰 Funds: <span id="funds">0</span></div>
+    <div class="group">👨‍👩‍👧‍👦 Pop: <span id="population">0</span></div>
+    <div class="group">💼 Jobs: <span id="jobs">0</span></div>
+    <div class="group">📈 Demand R:<span id="demandR">0</span> C:<span id="demandC">0</span> I:<span id="demandI">0</span></div>
+    <div class="group">🗓️ Month: <span id="month">0</span></div>
+    <div class="group">⏱️ Speed:
+      <select id="speed">
+        <option value="0">Paused</option>
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="4">4x</option>
+      </select>
+    </div>
+    <div class="spacer"></div>
+    <div class="group">
+      <button class="tool-btn" id="btnSave">💾 Save</button>
+      <button class="tool-btn" id="btnLoad">📂 Load</button>
+      <button class="tool-btn" id="btnNew">🧹 New</button>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <button class="tool-btn" data-tool="road">🛣️ Road (1)</button>
+    <button class="tool-btn" data-tool="wire">⚡ Power Line (2)</button>
+    <button class="tool-btn" data-tool="residential">🏠 Residential (3)</button>
+    <button class="tool-btn" data-tool="commercial">🏬 Commercial (4)</button>
+    <button class="tool-btn" data-tool="industrial">🏭 Industrial (5)</button>
+    <button class="tool-btn" data-tool="powerplant">🔌 Power Plant (6)</button>
+    <button class="tool-btn" data-tool="bulldoze">🪓 Bulldozer (7)</button>
+    <button class="tool-btn" data-tool="inspect">🔎 Inspect (8)</button>
+    <div class="spacer"></div>
+    <button class="tool-btn" id="toggleGrid"># Grid (G)</button>
+    <button class="tool-btn" id="togglePower">⚡ Overlay (P)</button>
+    <button class="tool-btn" id="resetCamera">🎯 Reset View</button>
+  </div>
+
+  <canvas id="game"></canvas>
+
+  <div id="help">
+    Shortcuts: 1 Road, 2 Power, 3 R, 4 C, 5 I, 6 Plant, 7 Bulldoze, 8 Inspect, G Grid, P Power overlay, Space Pause/Resume, +/- Speed, Mouse wheel Zoom, Middle-drag Pan. Drag to paint. Costs are charged on change only.
+  </div>
+
+  <div id="statusbar">
+    <div id="statusLeft">Ready.</div>
+    <div id="statusRight">Coords: <span id="coords">-,-</span> | Tile: <span id="tileInfo">N/A</span></div>
+  </div>
+
+  <script>
+    const TILE_SIZE = 20;
+    const MAP_WIDTH = 64;
+    const MAP_HEIGHT = 48;
+
+    const STARTING_FUNDS = 20000;
+
+    const COSTS = Object.freeze({
+      road: 10,
+      wire: 5,
+      residential: 50,
+      commercial: 60,
+      industrial: 50,
+      powerplant: 3000,
+      bulldoze: 1
+    });
+
+    const MAINTENANCE = Object.freeze({
+      road: 0.1,
+      wire: 0.05,
+      powerplant: 50
+    });
+
+    const TAX_RATES = Object.freeze({
+      perResident: 0.35,
+      perCommercialJob: 0.30,
+      perIndustrialJob: 0.30
+    });
+
+    const TileType = Object.freeze({
+      empty: 0,
+      road: 1,
+      residential: 2,
+      commercial: 3,
+      industrial: 4,
+      powerplant: 5
+    });
+
+    const Tool = Object.freeze({
+      road: 'road',
+      wire: 'wire',
+      residential: 'residential',
+      commercial: 'commercial',
+      industrial: 'industrial',
+      powerplant: 'powerplant',
+      bulldoze: 'bulldoze',
+      inspect: 'inspect'
+    });
+
+    const R_POP = [0, 12, 32, 64];
+    const C_JOBS = [0, 10, 28, 56];
+    const I_JOBS = [0, 14, 36, 72];
+
+    function createEmptyTile() {
+      return {
+        type: TileType.empty,
+        stage: 0,
+        hasWire: false,
+        isWirePowered: false,
+        isZonePowered: false,
+        hasRoadAccess: false
+      };
+    }
+
+    function createMap(width, height) {
+      const grid = new Array(height);
+      for (let y = 0; y < height; y++) {
+        grid[y] = new Array(width);
+        for (let x = 0; x < width; x++) {
+          grid[y][x] = createEmptyTile();
+        }
+      }
+      return grid;
+    }
+
+    const state = {
+      map: createMap(MAP_WIDTH, MAP_HEIGHT),
+      width: MAP_WIDTH,
+      height: MAP_HEIGHT,
+      tileSize: TILE_SIZE,
+      funds: STARTING_FUNDS,
+      month: 0,
+      selectedTool: Tool.road,
+      showGrid: true,
+      showPowerOverlay: false,
+      camera: { x: 0, y: 0, scale: 1 },
+      isPanning: false,
+      isPainting: false,
+      lastPainted: new Set(),
+      speed: 1,
+      metrics: { population: 0, jobsCommercial: 0, jobsIndustrial: 0 },
+      demand: { r: 0, c: 0, i: 0 },
+      hover: { x: -1, y: -1 },
+      inspectInfo: null
+    };
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const elFunds = document.getElementById('funds');
+    const elPopulation = document.getElementById('population');
+    const elJobs = document.getElementById('jobs');
+    const elDemandR = document.getElementById('demandR');
+    const elDemandC = document.getElementById('demandC');
+    const elDemandI = document.getElementById('demandI');
+    const elMonth = document.getElementById('month');
+    const elSpeed = document.getElementById('speed');
+    const elCoords = document.getElementById('coords');
+    const elTileInfo = document.getElementById('tileInfo');
+    const elStatusLeft = document.getElementById('statusLeft');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      const toolbarHeight = document.getElementById('toolbar').getBoundingClientRect().height;
+      const topbarHeight = document.getElementById('topbar').getBoundingClientRect().height;
+      const statusHeight = document.getElementById('statusbar').getBoundingClientRect().height;
+      const helpHeight = document.getElementById('help').getBoundingClientRect().height;
+      const totalBars = toolbarHeight + topbarHeight + statusHeight + helpHeight;
+      canvas.height = Math.max(200, window.innerHeight - totalBars);
+      render();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function worldToScreen(x, y) {
+      return {
+        sx: Math.floor((x * state.tileSize - state.camera.x) * state.camera.scale),
+        sy: Math.floor((y * state.tileSize - state.camera.y) * state.camera.scale)
+      };
+    }
+
+    function screenToGrid(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const sx = clientX - rect.left;
+      const sy = clientY - rect.top;
+      const wx = (sx / state.camera.scale + state.camera.x) / state.tileSize;
+      const wy = (sy / state.camera.scale + state.camera.y) / state.tileSize;
+      return { gx: Math.floor(wx), gy: Math.floor(wy) };
+    }
+
+    function inBounds(x, y) {
+      return x >= 0 && y >= 0 && x < state.width && y < state.height;
+    }
+
+    function getTile(x, y) {
+      if (!inBounds(x, y)) return null;
+      return state.map[y][x];
+    }
+
+    function setToolActive(tool) {
+      state.selectedTool = tool;
+      document.querySelectorAll('.tool-btn[data-tool]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-tool') === tool);
+      });
+      const cost = COSTS[tool] != null ? COSTS[tool] : 0;
+      elStatusLeft.textContent = `Tool: ${tool} | Cost: $${cost}`;
+    }
+
+    function canAfford(amount) {
+      return state.funds >= amount;
+    }
+
+    function spend(amount) {
+      if (!canAfford(amount)) return false;
+      state.funds -= amount;
+      return true;
+    }
+
+    function refund(amount) {
+      state.funds += amount;
+    }
+
+    function tileTypeName(type) {
+      switch (type) {
+        case TileType.empty: return 'Empty';
+        case TileType.road: return 'Road';
+        case TileType.residential: return 'Residential';
+        case TileType.commercial: return 'Commercial';
+        case TileType.industrial: return 'Industrial';
+        case TileType.powerplant: return 'Power Plant';
+        default: return 'Unknown';
+      }
+    }
+
+    function drawGrid() {
+      if (!state.showGrid) return;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(70,80,100,0.25)';
+      ctx.lineWidth = 1 * state.camera.scale;
+      const startX = Math.floor(state.camera.x / state.tileSize);
+      const startY = Math.floor(state.camera.y / state.tileSize);
+      const endX = Math.ceil((state.camera.x + canvas.width / state.camera.scale) / state.tileSize);
+      const endY = Math.ceil((state.camera.y + canvas.height / state.camera.scale) / state.tileSize);
+      for (let x = startX; x <= endX; x++) {
+        const { sx } = worldToScreen(x, 0);
+        ctx.beginPath();
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = startY; y <= endY; y++) {
+        const { sy } = worldToScreen(0, y);
+        ctx.beginPath();
+        ctx.moveTo(0, sy);
+        ctx.lineTo(canvas.width, sy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawRoadConnections(x, y, size) {
+      const tile = getTile(x, y);
+      if (!tile || tile.type !== TileType.road) return;
+      const up = getTile(x, y - 1)?.type === TileType.road;
+      const down = getTile(x, y + 1)?.type === TileType.road;
+      const left = getTile(x - 1, y)?.type === TileType.road;
+      const right = getTile(x + 1, y)?.type === TileType.road;
+      const { sx, sy } = worldToScreen(x, y);
+      const s = Math.floor(size * state.camera.scale);
+      const cx = sx;
+      const cy = sy;
+      const inner = Math.floor(s * 0.25);
+      const half = Math.floor(s / 2);
+      ctx.fillStyle = '#444b57';
+      ctx.fillRect(cx, cy, s, s);
+      ctx.fillStyle = '#aab1bf';
+      ctx.fillRect(cx + inner, cy + inner, s - inner * 2, s - inner * 2);
+      ctx.fillStyle = '#8b95a6';
+      if (up) ctx.fillRect(cx + inner, cy, s - inner * 2, half);
+      if (down) ctx.fillRect(cx + inner, cy + half, s - inner * 2, half);
+      if (left) ctx.fillRect(cx, cy + inner, half, s - inner * 2);
+      if (right) ctx.fillRect(cx + half, cy + inner, half, s - inner * 2);
+    }
+
+    function drawWire(x, y, size, energized) {
+      const { sx, sy } = worldToScreen(x, y);
+      const s = Math.floor(size * state.camera.scale);
+      const cx = sx;
+      const cy = sy;
+      ctx.strokeStyle = energized ? '#ffd166' : '#917a2f';
+      ctx.lineWidth = Math.max(1, Math.floor(s * 0.1));
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 0.2, cy + s * 0.2);
+      ctx.lineTo(cx + s * 0.8, cy + s * 0.8);
+      ctx.moveTo(cx + s * 0.8, cy + s * 0.2);
+      ctx.lineTo(cx + s * 0.2, cy + s * 0.8);
+      ctx.stroke();
+    }
+
+    function drawZone(x, y, size, type, stage, powered) {
+      const { sx, sy } = worldToScreen(x, y);
+      const s = Math.floor(size * state.camera.scale);
+      const cx = sx;
+      const cy = sy;
+      let baseColor = '#2a2f3a';
+      if (type === TileType.residential) baseColor = '#244b2a';
+      if (type === TileType.commercial) baseColor = '#243f4b';
+      if (type === TileType.industrial) baseColor = '#4b3d24';
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(cx, cy, s, s);
+      const borderColor = powered ? '#f7f39b' : '#3a4152';
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = Math.max(1, Math.floor(s * 0.08));
+      ctx.strokeRect(cx + 1, cy + 1, s - 2, s - 2);
+      if (stage > 0) {
+        const buildingColor = powered ? '#dfe7ff' : '#b8c0cc';
+        ctx.fillStyle = buildingColor;
+        const pad = Math.floor(s * 0.2 * (4 - stage) / 3);
+        ctx.fillRect(cx + pad, cy + pad, s - pad * 2, s - pad * 2);
+        ctx.fillStyle = '#2b3241';
+        const win = Math.max(1, Math.floor(s * 0.08));
+        for (let i = 0; i < stage + 1; i++) {
+          ctx.fillRect(cx + pad + 2, cy + pad + 2 + i * (win + 2), s - pad * 2 - 4, win);
+        }
+      }
+    }
+
+    function drawPowerPlant(x, y, size, energized) {
+      const { sx, sy } = worldToScreen(x, y);
+      const s = Math.floor(size * state.camera.scale);
+      ctx.fillStyle = '#5c5f69';
+      ctx.fillRect(sx, sy, s, s);
+      ctx.fillStyle = '#a7aab3';
+      ctx.fillRect(sx + s * 0.1, sy + s * 0.55, s * 0.8, s * 0.35);
+      ctx.fillStyle = energized ? '#ffd166' : '#7a6a2f';
+      ctx.fillRect(sx + s * 0.15, sy + s * 0.2, s * 0.15, s * 0.35);
+      ctx.fillRect(sx + s * 0.4, sy + s * 0.15, s * 0.15, s * 0.4);
+      ctx.fillRect(sx + s * 0.65, sy + s * 0.25, s * 0.15, s * 0.3);
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const startX = Math.floor(state.camera.x / state.tileSize);
+      const startY = Math.floor(state.camera.y / state.tileSize);
+      const endX = Math.ceil((state.camera.x + canvas.width / state.camera.scale) / state.tileSize);
+      const endY = Math.ceil((state.camera.y + canvas.height / state.camera.scale) / state.tileSize);
+
+      for (let y = startY; y < endY; y++) {
+        for (let x = startX; x < endX; x++) {
+          if (!inBounds(x, y)) continue;
+          const t = getTile(x, y);
+          if (t.type === TileType.road) {
+            drawRoadConnections(x, y, state.tileSize);
+          } else if (t.type === TileType.residential || t.type === TileType.commercial || t.type === TileType.industrial) {
+            drawZone(x, y, state.tileSize, t.type, t.stage, t.isZonePowered);
+          } else if (t.type === TileType.powerplant) {
+            drawPowerPlant(x, y, state.tileSize, true);
+          } else {
+            const { sx, sy } = worldToScreen(x, y);
+            const s = Math.floor(state.tileSize * state.camera.scale);
+            ctx.fillStyle = '#0a0c12';
+            ctx.fillRect(sx, sy, s, s);
+          }
+
+          if (t.hasWire) {
+            const energized = t.isWirePowered;
+            drawWire(x, y, state.tileSize, energized);
+          }
+
+          if (state.showPowerOverlay && (t.type === TileType.residential || t.type === TileType.commercial || t.type === TileType.industrial)) {
+            const { sx, sy } = worldToScreen(x, y);
+            const s = Math.floor(state.tileSize * state.camera.scale);
+            ctx.fillStyle = t.isZonePowered ? 'rgba(255,209,102,0.25)' : 'rgba(209,67,67,0.25)';
+            ctx.fillRect(sx, sy, s, s);
+          }
+        }
+      }
+
+      drawGrid();
+
+      if (inBounds(state.hover.x, state.hover.y)) {
+        const { sx, sy } = worldToScreen(state.hover.x, state.hover.y);
+        const s = Math.floor(state.tileSize * state.camera.scale);
+        ctx.strokeStyle = '#8ab4ff';
+        ctx.lineWidth = Math.max(1, Math.floor(s * 0.06));
+        ctx.strokeRect(sx + 1, sy + 1, s - 2, s - 2);
+      }
+    }
+
+    function neighbors4(x, y) {
+      return [
+        { x, y: y - 1 },
+        { x: x + 1, y },
+        { x, y: y + 1 },
+        { x: x - 1, y }
+      ].filter(p => inBounds(p.x, p.y));
+    }
+
+    function recalcPowerNetworks() {
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          t.isWirePowered = false;
+          t.isZonePowered = false;
+          t.hasRoadAccess = false;
+        }
+      }
+
+      const queue = [];
+      const visited = new Set();
+      const plantPositions = [];
+
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          if (t.type === TileType.powerplant) {
+            plantPositions.push({ x, y });
+            const key = `${x},${y}`;
+            visited.add(key);
+            queue.push({ x, y });
+            t.isWirePowered = true;
+          }
+        }
+      }
+
+      while (queue.length > 0) {
+        const { x, y } = queue.shift();
+        for (const n of neighbors4(x, y)) {
+          const nt = getTile(n.x, n.y);
+          if (!nt) continue;
+          const key = `${n.x},${n.y}`;
+          if (visited.has(key)) continue;
+          if (nt.hasWire) {
+            nt.isWirePowered = true;
+            visited.add(key);
+            queue.push({ x: n.x, y: n.y });
+          }
+        }
+      }
+
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          if (t.type === TileType.residential || t.type === TileType.commercial || t.type === TileType.industrial) {
+            let powered = false;
+            if (t.hasWire && t.isWirePowered) powered = true;
+            if (!powered) {
+              for (const n of neighbors4(x, y)) {
+                const nt = getTile(n.x, n.y);
+                if (!nt) continue;
+                if (nt.isWirePowered) { powered = true; break; }
+              }
+            }
+            t.isZonePowered = powered;
+          }
+          if (t.type === TileType.residential || t.type === TileType.commercial || t.type === TileType.industrial) {
+            for (const n of neighbors4(x, y)) {
+              const nt = getTile(n.x, n.y);
+              if (nt && nt.type === TileType.road) { t.hasRoadAccess = true; break; }
+            }
+          }
+        }
+      }
+    }
+
+    function computeEconomy() {
+      let population = 0;
+      let jobsCommercial = 0;
+      let jobsIndustrial = 0;
+
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          if (t.type === TileType.residential) population += R_POP[t.stage];
+          if (t.type === TileType.commercial) jobsCommercial += C_JOBS[t.stage];
+          if (t.type === TileType.industrial) jobsIndustrial += I_JOBS[t.stage];
+        }
+      }
+
+      state.metrics.population = population;
+      state.metrics.jobsCommercial = jobsCommercial;
+      state.metrics.jobsIndustrial = jobsIndustrial;
+
+      const totalJobs = jobsCommercial + jobsIndustrial;
+      const demandRRaw = totalJobs - population;
+      const demandCRaw = Math.floor(state.metrics.population * 0.35) - jobsCommercial;
+      const demandIRaw = Math.floor(state.metrics.population * 0.35) - jobsIndustrial;
+
+      function normalizeDemand(v) {
+        const clamped = Math.max(-500, Math.min(500, v));
+        return Math.round((clamped / 5));
+      }
+
+      state.demand.r = normalizeDemand(demandRRaw);
+      state.demand.c = normalizeDemand(demandCRaw);
+      state.demand.i = normalizeDemand(demandIRaw);
+
+      const taxes = Math.floor(
+        state.metrics.population * TAX_RATES.perResident +
+        state.metrics.jobsCommercial * TAX_RATES.perCommercialJob +
+        state.metrics.jobsIndustrial * TAX_RATES.perIndustrialJob
+      );
+
+      let maintenance = 0;
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          if (t.type === TileType.road) maintenance += MAINTENANCE.road;
+          if (t.hasWire) maintenance += MAINTENANCE.wire;
+          if (t.type === TileType.powerplant) maintenance += MAINTENANCE.powerplant;
+        }
+      }
+
+      return { taxes, maintenance: Math.floor(maintenance) };
+    }
+
+    function chance(p) {
+      return Math.random() < p;
+    }
+
+    function growthTick() {
+      const growthR = Math.max(0, state.demand.r) / 100;
+      const growthC = Math.max(0, state.demand.c) / 100;
+      const growthI = Math.max(0, state.demand.i) / 100;
+      const decayR = Math.max(0, -state.demand.r) / 100;
+      const decayC = Math.max(0, -state.demand.c) / 100;
+      const decayI = Math.max(0, -state.demand.i) / 100;
+
+      for (let y = 0; y < state.height; y++) {
+        for (let x = 0; x < state.width; x++) {
+          const t = state.map[y][x];
+          if (t.type === TileType.residential || t.type === TileType.commercial || t.type === TileType.industrial) {
+            const hasReq = t.hasRoadAccess && t.isZonePowered;
+            if (hasReq) {
+              let g = 0.01;
+              if (t.type === TileType.residential) g += growthR * 0.5;
+              if (t.type === TileType.commercial) g += growthC * 0.5;
+              if (t.type === TileType.industrial) g += growthI * 0.5;
+              if (t.stage < 3 && chance(g)) t.stage += 1;
+            } else {
+              const d = 0.03;
+              if (t.stage > 0 && chance(d)) t.stage -= 1;
+            }
+            if (t.type === TileType.residential && t.stage > 0 && chance(decayR * 0.5)) t.stage -= 1;
+            if (t.type === TileType.commercial && t.stage > 0 && chance(decayC * 0.5)) t.stage -= 1;
+            if (t.type === TileType.industrial && t.stage > 0 && chance(decayI * 0.5)) t.stage -= 1;
+          }
+        }
+      }
+    }
+
+    function monthlyTick() {
+      recalcPowerNetworks();
+      computeEconomy();
+      growthTick();
+      const eco = computeEconomy();
+      state.funds += eco.taxes - eco.maintenance;
+      state.month += 1;
+      updateUI();
+    }
+
+    function updateUI() {
+      elFunds.textContent = Math.max(0, Math.floor(state.funds)).toLocaleString();
+      elPopulation.textContent = state.metrics.population.toLocaleString();
+      const totalJobs = state.metrics.jobsCommercial + state.metrics.jobsIndustrial;
+      elJobs.textContent = totalJobs.toLocaleString();
+      elDemandR.textContent = state.demand.r;
+      elDemandC.textContent = state.demand.c;
+      elDemandI.textContent = state.demand.i;
+      elMonth.textContent = state.month;
+    }
+
+    function placeAt(x, y) {
+      if (!inBounds(x, y)) return;
+      const key = `${x},${y}`;
+      if (state.lastPainted.has(key)) return;
+      const t = getTile(x, y);
+      const tool = state.selectedTool;
+      let changed = false;
+      let cost = COSTS[tool] || 0;
+
+      if (tool === Tool.road) {
+        if (t.type !== TileType.road) {
+          if (!spend(cost)) return;
+          t.type = TileType.road;
+          t.stage = 0;
+          changed = true;
+        }
+      } else if (tool === Tool.wire) {
+        if (!t.hasWire) {
+          if (!spend(cost)) return;
+          t.hasWire = true;
+          changed = true;
+        }
+      } else if (tool === Tool.residential) {
+        if (t.type !== TileType.residential) {
+          if (!spend(cost)) return;
+          t.type = TileType.residential;
+          t.stage = 0;
+          changed = true;
+        }
+      } else if (tool === Tool.commercial) {
+        if (t.type !== TileType.commercial) {
+          if (!spend(cost)) return;
+          t.type = TileType.commercial;
+          t.stage = 0;
+          changed = true;
+        }
+      } else if (tool === Tool.industrial) {
+        if (t.type !== TileType.industrial) {
+          if (!spend(cost)) return;
+          t.type = TileType.industrial;
+          t.stage = 0;
+          changed = true;
+        }
+      } else if (tool === Tool.powerplant) {
+        if (t.type !== TileType.powerplant) {
+          if (!spend(cost)) return;
+          t.type = TileType.powerplant;
+          t.stage = 0;
+          changed = true;
+        }
+      } else if (tool === Tool.bulldoze) {
+        if (t.type !== TileType.empty || t.hasWire || t.stage !== 0) {
+          if (!spend(cost)) return;
+          t.type = TileType.empty;
+          t.hasWire = false;
+          t.stage = 0;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        state.lastPainted.add(key);
+        recalcPowerNetworks();
+        computeEconomy();
+        updateUI();
+        render();
+      }
+    }
+
+    function inspectAt(x, y) {
+      const t = getTile(x, y);
+      if (!t) return;
+      const typeName = tileTypeName(t.type);
+      const pop = t.type === TileType.residential ? R_POP[t.stage] : 0;
+      const jobs = t.type === TileType.commercial ? C_JOBS[t.stage] : t.type === TileType.industrial ? I_JOBS[t.stage] : 0;
+      const info = `${typeName} | Stage ${t.stage} | Wire:${t.hasWire ? 'Y' : 'N'} | Powered:${t.isZonePowered ? 'Y' : 'N'} | Road:${t.hasRoadAccess ? 'Y' : 'N'} | Pop:${pop} | Jobs:${jobs}`;
+      elTileInfo.textContent = info;
+    }
+
+    function onPointerDown(e) {
+      if (e.button === 1) {
+        state.isPanning = true;
+        state.panStart = { x: e.clientX, y: e.clientY, camX: state.camera.x, camY: state.camera.y };
+        return;
+      }
+      state.isPainting = true;
+      state.lastPainted.clear();
+      const { gx, gy } = screenToGrid(e.clientX, e.clientY);
+      if (state.selectedTool === Tool.inspect) {
+        inspectAt(gx, gy);
+        return;
+      }
+      placeAt(gx, gy);
+    }
+
+    function onPointerMove(e) {
+      const { gx, gy } = screenToGrid(e.clientX, e.clientY);
+      state.hover.x = gx;
+      state.hover.y = gy;
+      elCoords.textContent = `${gx},${gy}`;
+      if (state.isPanning && state.panStart) {
+        const dx = (e.clientX - state.panStart.x) / state.camera.scale;
+        const dy = (e.clientY - state.panStart.y) / state.camera.scale;
+        state.camera.x = state.panStart.camX - dx;
+        state.camera.y = state.panStart.camY - dy;
+        render();
+        return;
+      }
+      if (!state.isPainting) {
+        render();
+        return;
+      }
+      if (state.selectedTool === Tool.inspect) return;
+      placeAt(gx, gy);
+    }
+
+    function onPointerUp() {
+      state.isPainting = false;
+      state.isPanning = false;
+      state.panStart = null;
+    }
+
+    function onWheel(e) {
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      const oldScale = state.camera.scale;
+      const newScale = Math.max(0.5, Math.min(3, oldScale * zoomFactor));
+      if (newScale === oldScale) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / oldScale + state.camera.x;
+      const my = (e.clientY - rect.top) / oldScale + state.camera.y;
+      state.camera.scale = newScale;
+      state.camera.x = mx - (e.clientX - rect.left) / newScale;
+      state.camera.y = my - (e.clientY - rect.top) / newScale;
+      render();
+    }
+
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('wheel', onWheel, { passive: true });
+
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+      btn.addEventListener('click', () => setToolActive(btn.getAttribute('data-tool')));
+    });
+
+    document.getElementById('toggleGrid').addEventListener('click', () => {
+      state.showGrid = !state.showGrid;
+      render();
+    });
+
+    document.getElementById('togglePower').addEventListener('click', () => {
+      state.showPowerOverlay = !state.showPowerOverlay;
+      render();
+    });
+
+    document.getElementById('resetCamera').addEventListener('click', () => {
+      state.camera = { x: 0, y: 0, scale: 1 };
+      render();
+    });
+
+    elSpeed.addEventListener('change', () => {
+      state.speed = parseFloat(elSpeed.value);
+    });
+
+    function setSpeedDelta(delta) {
+      const options = Array.from(elSpeed.options).map(o => parseFloat(o.value));
+      const idx = options.indexOf(parseFloat(elSpeed.value));
+      const next = Math.max(0, Math.min(options.length - 1, idx + delta));
+      elSpeed.value = String(options[next]);
+      state.speed = parseFloat(elSpeed.value);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === '1') setToolActive(Tool.road);
+      if (e.key === '2') setToolActive(Tool.wire);
+      if (e.key === '3') setToolActive(Tool.residential);
+      if (e.key === '4') setToolActive(Tool.commercial);
+      if (e.key === '5') setToolActive(Tool.industrial);
+      if (e.key === '6') setToolActive(Tool.powerplant);
+      if (e.key === '7') setToolActive(Tool.bulldoze);
+      if (e.key === '8') setToolActive(Tool.inspect);
+      if (e.key.toLowerCase() === 'g') { state.showGrid = !state.showGrid; render(); }
+      if (e.key.toLowerCase() === 'p') { state.showPowerOverlay = !state.showPowerOverlay; render(); }
+      if (e.key === ' ') { e.preventDefault(); if (state.speed > 0) { state.prevSpeed = state.speed; state.speed = 0; elSpeed.value = '0'; } else { state.speed = state.prevSpeed || 1; elSpeed.value = String(state.speed); } }
+      if (e.key === '+') setSpeedDelta(1);
+      if (e.key === '-') setSpeedDelta(-1);
+    });
+
+    document.getElementById('btnSave').addEventListener('click', () => {
+      const save = {
+        version: 1,
+        funds: state.funds,
+        month: state.month,
+        map: state.map.map(row => row.map(t => ({
+          type: t.type,
+          stage: t.stage,
+          hasWire: t.hasWire
+        })))
+      };
+      localStorage.setItem('simcity-1-save', JSON.stringify(save));
+      elStatusLeft.textContent = 'Game saved.';
+    });
+
+    document.getElementById('btnLoad').addEventListener('click', () => {
+      const raw = localStorage.getItem('simcity-1-save');
+      if (!raw) { elStatusLeft.textContent = 'No saved game found.'; return; }
+      try {
+        const save = JSON.parse(raw);
+        state.funds = save.funds ?? STARTING_FUNDS;
+        state.month = save.month ?? 0;
+        if (save.map && Array.isArray(save.map)) {
+          state.height = save.map.length;
+          state.width = save.map[0].length;
+          state.map = createMap(state.width, state.height);
+          for (let y = 0; y < state.height; y++) {
+            for (let x = 0; x < state.width; x++) {
+              const s = save.map[y][x];
+              const t = state.map[y][x];
+              t.type = s.type;
+              t.stage = s.stage;
+              t.hasWire = !!s.hasWire;
+            }
+          }
+        }
+        recalcPowerNetworks();
+        computeEconomy();
+        updateUI();
+        render();
+        elStatusLeft.textContent = 'Game loaded.';
+      } catch (e) {
+        elStatusLeft.textContent = 'Failed to load save.';
+      }
+    });
+
+    document.getElementById('btnNew').addEventListener('click', () => {
+      state.map = createMap(MAP_WIDTH, MAP_HEIGHT);
+      state.width = MAP_WIDTH;
+      state.height = MAP_HEIGHT;
+      state.funds = STARTING_FUNDS;
+      state.month = 0;
+      state.camera = { x: 0, y: 0, scale: 1 };
+      recalcPowerNetworks();
+      computeEconomy();
+      updateUI();
+      render();
+      elStatusLeft.textContent = 'New city started.';
+    });
+
+    function init() {
+      setToolActive(Tool.road);
+      resizeCanvas();
+      recalcPowerNetworks();
+      computeEconomy();
+      updateUI();
+      render();
+    }
+
+    let accumulator = 0;
+    let lastTime = performance.now();
+
+    function frame(now) {
+      const dt = Math.min(0.25, (now - lastTime) / 1000);
+      lastTime = now;
+      accumulator += dt * state.speed;
+      const monthSeconds = 1.0;
+      while (accumulator >= monthSeconds) {
+        monthlyTick();
+        accumulator -= monthSeconds;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    init();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

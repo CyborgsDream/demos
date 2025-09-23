@@ -543,16 +543,57 @@
             const controlText = document.getElementById('control-text');
             const gyroIndicator = document.getElementById('gyro-indicator');
             const mobileControls = document.getElementById('mobile-controls');
+            const container = document.getElementById('container');
+
             if (isMobile()) {
                 controlText.textContent = "Mobile: Tilt device to look around";
                 gyroIndicator.style.display = 'block';
                 mobileControls.style.display = 'flex';
-                // Show orientation message if in portrait mode
-                if (window.innerHeight > window.innerWidth) {
-                    orientationMessage.style.display = 'flex';
-                } else {
-                    orientationMessage.style.display = 'none';
+            }
+
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const aspect = 16 / 9;
+            if (isPortrait) {
+                // exit fullscreen if active
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
                 }
+                orientationMessage.style.display = 'none';
+
+                const width = window.innerWidth;
+                const height = width / aspect;
+
+                renderer.setSize(width, height);
+                renderer.domElement.style.width = width + 'px';
+                renderer.domElement.style.height = height + 'px';
+
+                container.style.width = width + 'px';
+                container.style.height = height + 'px';
+                container.style.position = 'absolute';
+                container.style.left = '50%';
+                container.style.top = '50%';
+                container.style.transform = 'translate(-50%, -50%)';
+
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            } else {
+                orientationMessage.style.display = 'none';
+
+                container.style.position = 'fixed';
+                container.style.left = '0';
+                container.style.top = '0';
+                container.style.transform = '';
+                container.style.width = '100%';
+                container.style.height = '100%';
+
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.domElement.style.width = '100%';
+                renderer.domElement.style.height = '100%';
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                enterFullscreen();
             }
         }
 
@@ -639,9 +680,6 @@
 
         // Handle window resize
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
             handleOrientation();
         }
 

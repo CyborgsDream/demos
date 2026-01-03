@@ -1,28 +1,396 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Demos</title>
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; background:#0b0f16; color:#e6edf3; }
-    h1 { margin-top: 0; letter-spacing: 1px; }
-    ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-    li { background: rgba(255,255,255,0.04); padding: 14px 16px; border-radius: 10px; }
-    a { color: #6ad7ff; text-decoration: none; font-weight: 600; }
-    a:hover { text-decoration: underline; }
-    small { color: #9db3c4; display: block; margin-top: 4px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Demos</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #000; 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #e6edf3;
+            height: 100dvh; 
+            width: 100vw;
+            touch-action: none; 
+        }
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+            z-index: 0;
+        }
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(40px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            box-sizing: border-box;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 150%);
+            z-index: 1;
+        }
+
+        .header {
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            text-align: center;
+        }
+        .header h1 { font-size: 1.5rem; margin: 0; letter-spacing: 2px; }
+        .header h2 { font-size: 0.9rem; font-weight: 300; margin: 5px 0 0 0; opacity: 0.7; }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .lyrics {
+            text-align: center;
+            color: #fff;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            text-shadow: 0 0 20px currentColor;
+            width: 90%;
+        }
+
+        .progress-container {
+            width: 90%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            position: relative;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+            position: absolute;
+            left: 0;
+        }
+        .time-display {
+            position: absolute;
+            right: 0;
+            top: -20px;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitching { animation: glitch 0.1s infinite; }
+
+        /* Demo index overlay */
+        #content {
+            position: relative;
+            z-index: 2;
+            padding: 32px;
+            max-width: 900px;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+        h1 { margin-top: 0; letter-spacing: 1px; }
+        ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+        li { background: rgba(11, 15, 22, 0.7); padding: 14px 16px; border-radius: 10px; }
+        a { color: #6ad7ff; text-decoration: none; font-weight: 600; }
+        a:hover { text-decoration: underline; }
+        small { color: #9db3c4; display: block; margin-top: 4px; }
+    </style>
 </head>
 <body>
-  <h1>Demo Index</h1>
-  <ul>
-    <li><a href="synapse_gallery.html">SYNAPSE:07 Scene &amp; Effect Gallery</a><small>Overview of scenes, transitions, and post FX for the warp edition.</small></li>
-    <li><a href="synapse_v0_7_0.html">SYNAPSE:07 Warp Edition</a><small>Original interactive experience with audio-reactive WebGL sequencing.</small></li>
-    <li><a href="3d-world.html">3D World</a><small>Legacy three.js demo.</small></li>
-    <li><a href="3d-world-2.html">3D World 2</a><small>Alternate scene graph experiment.</small></li>
-    <li><a href="artifacts.html">Artifacts</a><small>Miscellaneous artifact showcase.</small></li>
-    <li><a href="vhdr.html">VHDR</a><small>Visual headroom experiment.</small></li>
-  </ul>
+    <div id="ui-layer">
+        <div class="header">
+            <h1 id="track-title">PULSUJĄCY MROK</h1>
+            <h2 id="artist-name">CYBERNOID</h2>
+        </div>
+        
+        <div class="controls">
+            <div id="lyrics-display" class="lyrics"></div>
+            <div class="progress-container">
+                <div id="time-display" class="time-display">00:00</div>
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <main id="content">
+        <h1>Demo Index</h1>
+        <ul>
+            <li><a href="synapse_gallery.html">SYNAPSE:07 Scene &amp; Effect Gallery</a><small>Overview of scenes, transitions, and post FX for the warp edition.</small></li>
+            <li><a href="synapse_v0_7_0.html">SYNAPSE:07 Warp Edition</a><small>Original interactive experience with audio-reactive WebGL sequencing.</small></li>
+            <li><a href="3d-world.html">3D World</a><small>Legacy three.js demo.</small></li>
+            <li><a href="3d-world-2.html">3D World 2</a><small>Alternate scene graph experiment.</small></li>
+            <li><a href="artifacts.html">Artifacts</a><small>Miscellaneous artifact showcase.</small></li>
+            <li><a href="vhdr.html">VHDR</a><small>Visual headroom experiment.</small></li>
+        </ul>
+    </main>
+
+    <!-- Shaders -->
+    <script type="x-shader/x-vertex" id="vertexShader">
+        varying vec2 vUv;
+        varying vec3 vPos;
+        uniform float uTime;
+        
+        void main() {
+            vUv = uv;
+            vPos = position;
+            
+            vec3 pos = position;
+            float twist = sin(pos.z * 0.1 + uTime * 0.5) * 5.0;
+            pos.x += cos(pos.z * 0.05 + uTime) * 10.0;
+            pos.y += sin(pos.z * 0.05 + uTime) * 10.0;
+
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentShader">
+        varying vec2 vUv;
+        varying vec3 vPos;
+        uniform float uTime;
+        uniform vec3 uColor1;
+        uniform vec3 uColor2;
+        uniform float uBeat;
+
+        void main() {
+            float gridX = step(0.95, fract(vUv.x * 20.0 + uTime * 0.2));
+            float gridY = step(0.95, fract(vUv.y * 4.0));
+            
+            float lightPulse = sin(vUv.y * 20.0 - uTime * 5.0);
+            lightPulse = smoothstep(0.8, 1.0, lightPulse);
+
+            float fog = smoothstep(200.0, 50.0, abs(vPos.z));
+
+            vec3 baseColor = mix(uColor1, uColor2, sin(vUv.x * 3.14 + uTime));
+            vec3 finalColor = baseColor * (gridX + gridY * 0.5);
+            
+            finalColor += uColor2 * lightPulse * uBeat * 2.0;
+
+            gl_FragColor = vec4(finalColor, fog);
+        }
+    </script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
+
+        const DURATION_SECONDS = 180;
+        const BPM = 128;
+        
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.domElement.id = 'bg-canvas';
+        document.body.prepend(renderer.domElement);
+
+        const tunnelGeometry = new THREE.CylinderGeometry(30, 30, 1000, 32, 20, true);
+        tunnelGeometry.rotateX(-Math.PI / 2);
+        
+        const tunnelMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor1: { value: new THREE.Color(0x00ffff) },
+                uColor2: { value: new THREE.Color(0xff00ff) },
+                uBeat: { value: 0 }
+            },
+            vertexShader: document.getElementById('vertexShader').textContent,
+            fragmentShader: document.getElementById('fragmentShader').textContent,
+            side: THREE.DoubleSide,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+
+        const tunnel = new THREE.Mesh(tunnelGeometry, tunnelMaterial);
+        scene.add(tunnel);
+
+        const totemGeo = new THREE.IcosahedronGeometry(8, 2);
+        const wireframeMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.5 
+        });
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+        const totem = new THREE.Mesh(totemGeo, wireframeMat);
+        const totemCore = new THREE.Mesh(new THREE.IcosahedronGeometry(6, 0), glowMat);
+        totem.add(totemCore);
+        totem.position.z = -100;
+        scene.add(totem);
+
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 2.0;
+        bloomPass.radius = 0.5;
+        composer.addPass(bloomPass);
+
+        const glitchPass = new GlitchPass();
+        glitchPass.goWild = false;
+        glitchPass.enabled = false;
+        composer.addPass(glitchPass);
+
+        const clock = new THREE.Clock();
+        const uiTitle = document.getElementById('track-title');
+        const uiLyrics = document.getElementById('lyrics-display');
+        const uiTime = document.getElementById('time-display');
+        const uiBar = document.getElementById('progress-bar');
+        
+        const palettes = [
+            { c1: 0x00aaff, c2: 0xff00aa, name: "PULSUJĄCY MROK" }, 
+            { c1: 0x00ff00, c2: 0xffaa00, name: "GŁĘBOKO POD SKÓRĄ" }, 
+            { c1: 0xff0044, c2: 0xaa00ff, name: "PULSUJĄCY CIEŃ" } 
+        ];
+
+        const lyrics = [
+            { t: 5, text: "[INSTRUMENTAL]" },
+            { t: 15, text: "W BLOKU MRUGA EKRAN DNIA" },
+            { t: 20, text: "KUCHNIA. LUSTRO." },
+            { t: 25, text: "PUSTA GRA" },
+            { t: 30, text: "TŁUMIĘ KRZYK KOLEJNĄ KAWĄ" },
+            { t: 40, text: "GŁĘBOKO POD SKÓRĄ" },
+            { t: 45, text: "COŚ ROŚNIE JAK MROK" },
+            { t: 55, text: "ZAGŁUSZASZ TO GÓRĄ HAŁASU I SŁÓW" },
+            { t: 65, text: "[SYNTH SOLO]" },
+            { t: 120, text: "KONIEC TRANSMISJI" }
+        ];
+
+        let currentPalette = 0;
+
+        function updateCamera() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            camera.aspect = width / height;
+            
+            if (height > width) {
+                camera.fov = 90; 
+            } else {
+                camera.fov = 75;
+            }
+            
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+            composer.setSize(width, height);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const totalProgress = time / DURATION_SECONDS;
+            
+            const beatDuration = 60 / BPM;
+            const beatFrac = (time % beatDuration) / beatDuration;
+            const beatHit = Math.pow(1.0 - beatFrac, 3.0); 
+            
+            tunnelMaterial.uniforms.uTime.value = time;
+            tunnelMaterial.uniforms.uBeat.value = beatHit;
+
+            camera.position.z = 5 - time * 20; 
+            if (camera.position.z < tunnel.position.z - 500) {
+                tunnel.position.z = camera.position.z - 500;
+            }
+            
+            camera.position.x = Math.sin(time * 0.5) * 2 + (Math.random() - 0.5) * beatHit * 0.5;
+            camera.position.y = Math.cos(time * 0.3) * 2 + (Math.random() - 0.5) * beatHit * 0.5;
+            
+            totem.position.z = camera.position.z - 80;
+            totem.rotation.x += 0.01;
+            totem.rotation.y += 0.02 + beatHit * 0.1;
+            totem.scale.setScalar(1 + beatHit * 0.3);
+
+            const col1 = new THREE.Color(palettes[currentPalette].c1);
+            const col2 = new THREE.Color(palettes[currentPalette].c2);
+            const mixCol = col1.clone().lerp(col2, Math.sin(time) * 0.5 + 0.5);
+            totemCore.material.color = mixCol;
+            totem.material.color = col2;
+
+            const phase = Math.floor(time / 20) % 3;
+            if (phase !== currentPalette) {
+                currentPalette = phase;
+                uiTitle.innerText = palettes[currentPalette].name;
+                uiTitle.classList.add('glitching');
+                setTimeout(() => uiTitle.classList.remove('glitching'), 500);
+                glitchPass.enabled = true;
+                setTimeout(() => glitchPass.enabled = false, 500);
+            }
+            
+            tunnelMaterial.uniforms.uColor1.value.lerp(col1, 0.02);
+            tunnelMaterial.uniforms.uColor2.value.lerp(col2, 0.02);
+
+            const mins = Math.floor(time / 60);
+            const secs = Math.floor(time % 60);
+            uiTime.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+            uiBar.style.width = `${Math.min(totalProgress * 100, 100)}%`;
+            uiBar.style.backgroundColor = '#' + mixCol.getHexString();
+            uiLyrics.style.color = '#' + mixCol.getHexString();
+
+            const currentLine = lyrics.findLast(l => l.t <= time);
+            if (currentLine) {
+                if (uiLyrics.innerText !== currentLine.text) {
+                    uiLyrics.style.opacity = 0;
+                    setTimeout(() => {
+                        uiLyrics.innerText = currentLine.text;
+                        uiLyrics.style.opacity = 1;
+                    }, 200);
+                }
+            }
+
+            composer.render();
+        }
+
+        window.addEventListener('resize', updateCamera);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateCamera, 100);
+        });
+
+        updateCamera();
+        animate();
+    </script>
 </body>
 </html>

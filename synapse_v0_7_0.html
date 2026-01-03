@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNAPSE: 07 | WARP EDITION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@900&family=Noto+Sans+SC:wght@900&display=swap');
+
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Share Tech Mono', monospace; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        /* UI & HUD */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: radial-gradient(circle, rgba(10,10,10,0.95) 0%, rgba(0,0,0,1) 100%); 
+            color: #0ff; z-index: 100;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #start-btn {
+            border: 2px solid #0ff; background: rgba(0, 0, 0, 0.8); color: #0ff;
+            padding: 20px 60px; font-size: 24px; font-family: 'Orbitron', sans-serif;
+            cursor: pointer; letter-spacing: 5px; transition: 0.1s; 
+            box-shadow: 0 0 15px #0ff; text-transform: uppercase;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        #start-btn:hover { background: #0ff; color: #000; box-shadow: 0 0 50px #0ff; }
+
+        #hud-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: none; z-index: 10;
+        }
+
+        .hud-item { position: absolute; font-size: 14px; color: rgba(255,255,255,0.8); text-shadow: 0 0 5px #0ff; }
+        .top-left { top: 40px; left: 30px; border-left: 4px solid #0ff; padding-left: 15px; }
+        .top-right { top: 40px; right: 30px; text-align: right; border-right: 4px solid #f0f; padding-right: 15px; }
+        .bottom-left { bottom: 40px; left: 30px; }
+        .bottom-right { bottom: 40px; right: 30px; font-size: 30px; color: #0ff; font-family: 'Orbitron'; }
+
+        /* Cinematic Bars */
+        .cinematic-bar {
+            position: absolute; left: 0; width: 100%; height: 0vh; 
+            background: black; z-index: 20; transition: height 0.1s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+        #bar-top { top: 0; }
+        #bar-bottom { bottom: 0; }
+
+        /* The "Flash" Text Layer */
+        #flash-layer {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100%; text-align: center; pointer-events: none; z-index: 50;
+        }
+
+        .flash-word {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 900;
+            font-size: 18vw; 
+            line-height: 1;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 0 40px rgba(0,255,255,0.8);
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .flash-active { animation: flash-anim 0.25s forwards; }
+
+        @keyframes flash-anim {
+            0% { opacity: 1; transform: scale(1.2) rotate(2deg); filter: blur(0px); }
+            20% { opacity: 1; transform: scale(1.0) rotate(-2deg); }
+            80% { opacity: 0.8; transform: scale(1.05); filter: blur(2px); }
+            100% { opacity: 0; transform: scale(1.5); filter: blur(10px); }
+        }
+
+        .scanlines {
+            position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px; pointer-events: none; z-index: 90; opacity: 0.4;
+        }
+        
+        #progress-bar {
+            position: absolute; top: 0; left: 0; height: 4px; background: #0ff; width: 0%; z-index: 99;
+            box-shadow: 0 0 10px #0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1 style="letter-spacing: 15px; font-weight: 100; font-size: 50px; text-shadow: 0 0 20px #0ff; text-align:center; font-family: 'Orbitron';">SYNAPSE:07<br><span style="font-size: 20px; letter-spacing: 5px; color: #fff;">WARP EDITION</span></h1>
+        <button id="start-btn">INITIATE WARP</button>
+        <p style="margin-top: 30px; font-size: 12px; color: #666;">WARNING: STROBE LIGHTS // HIGH SPEED</p>
+    </div>
+
+    <div id="bar-top" class="cinematic-bar"></div>
+    <div id="bar-bottom" class="cinematic-bar"></div>
+
+    <div id="hud-layer">
+        <div class="hud-item top-left">
+            <div id="status-text">SYSTEM: BOOT</div>
+            <div id="scene-text" style="color: #f0f; font-weight: bold;">SCENE: NULL</div>
+        </div>
+        <div class="hud-item top-right">
+            <div>RENDER: <span id="mem-val">WEBGL2</span></div>
+            <div>SPEED: <span id="gpu-val">MACH 1</span></div>
+        </div>
+        <div class="hud-item bottom-left">
+            OMNI_WARP_V7.0<br>
+            BASS_LEVEL: <span id="beat-val">0.00</span>
+        </div>
+        <div class="hud-item bottom-right" id="timer">00:00</div>
+        <div id="flash-layer">
+            <div id="big-text" class="flash-word">WARNING</div>
+        </div>
+    </div>
+
+    <div class="scanlines"></div>
+    <div id="progress-bar"></div>
+
+    <script type="module">
+        import * as THREE from 'https://esm.sh/three@0.157.0';
+        import { EffectComposer } from 'https://esm.sh/three@0.157.0/examples/jsm/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'https://esm.sh/three@0.157.0/examples/jsm/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'https://esm.sh/three@0.157.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'https://esm.sh/three@0.157.0/examples/jsm/postprocessing/ShaderPass.js';
+        import { GlitchPass } from 'https://esm.sh/three@0.157.0/examples/jsm/postprocessing/GlitchPass.js';
+
+        // --- CONSTANTS ---
+        const BPM = 138;
+        const BEAT_TIME = 60 / BPM;
+        const DURATION = 84; 
+
+        // --- AUDIO ENGINE ---
+        class AudioEngine {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.master = this.ctx.createGain();
+                this.master.gain.value = 0.5;
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 512;
+                this.master.connect(this.analyser);
+                this.analyser.connect(this.ctx.destination);
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+            }
+
+            start() {
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                this.startTime = this.ctx.currentTime;
+                this.playDrone();
+                this.scheduleSequence();
+            }
+
+            getAnalysis() {
+                this.analyser.getByteFrequencyData(this.dataArray);
+                let bass = this.dataArray[2] / 255;
+                let mid = 0;
+                for(let i=40; i<60; i++) mid += this.dataArray[i];
+                mid = mid / 20 / 255;
+                return { bass, mid };
+            }
+
+            playDrone() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(55, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + DURATION);
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass'; filter.frequency.value = 400;
+                osc.connect(filter); filter.connect(gain); gain.connect(this.master);
+                osc.start(); osc.stop(this.ctx.currentTime + DURATION);
+            }
+
+            playOsc(freq, time, dur, type, vol) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+                osc.frequency.exponentialRampToValueAtTime(freq/2, time + dur); 
+                gain.gain.setValueAtTime(vol, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+                osc.connect(gain); gain.connect(this.master);
+                osc.start(time); osc.stop(time + dur + 0.1);
+            }
+
+            playLead(time, note) {
+                const osc = this.ctx.createOscillator();
+                osc.type = 'square'; osc.frequency.setValueAtTime(note, time);
+                const g = this.ctx.createGain();
+                g.gain.setValueAtTime(0.05, time); g.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+                osc.connect(g); g.connect(this.master);
+                osc.start(time); osc.stop(time + 0.15);
+            }
+
+            scheduleSequence() {
+                const t0 = this.ctx.currentTime;
+                const totalBeats = (DURATION * BPM) / 60;
+                const arp = [440, 554, 659, 880, 659, 554, 440, 330];
+
+                for (let i = 0; i < totalBeats; i++) {
+                    const t = t0 + i * BEAT_TIME;
+                    const sec = i * BEAT_TIME;
+                    
+                    // Kick
+                    if(i % 1 === 0) this.playOsc(150, t, 0.2, 'sine', 0.8);
+                    
+                    // Hihat
+                    if(i % 1 === 0.5) {
+                        const osc = this.ctx.createOscillator();
+                        const g = this.ctx.createGain();
+                        osc.type = 'square'; osc.frequency.setValueAtTime(8000, t);
+                        g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.05);
+                        osc.connect(g); g.connect(this.master); osc.start(t); osc.stop(t+0.1);
+                    }
+                    
+                    // Bass
+                    if(sec > 5 && i % 2 === 0) {
+                        const note = (i % 8 === 0) ? 55 : 110;
+                        this.playOsc(note, t, 0.3, 'sawtooth', 0.3);
+                    }
+
+                    // Warp Lead (in cuts and drop)
+                    if ((sec < 20 && sec % 2 > 1) || (sec > 55 && sec < 70)) {
+                        if (i % 0.5 === 0) {
+                            const note = arp[(i*2) % arp.length];
+                            this.playLead(t, note);
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- SCENE SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.015);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        // --- POST PROCESSING ---
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+
+        const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloom.threshold = 0; bloom.strength = 1.5; bloom.radius = 0.5;
+        composer.addPass(bloom);
+
+        // V1 Scanline
+        const RGBShiftShader = {
+            uniforms: { "tDiffuse": { value: null }, "amount": { value: 0.005 }, "angle": { value: 0.0 }, "time": { value: 0 } },
+            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }`,
+            fragmentShader: `
+                uniform sampler2D tDiffuse; uniform float amount; uniform float angle; uniform float time; varying vec2 vUv;
+                float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+                void main() {
+                    vec2 offset = amount * vec2( cos(angle), sin(angle));
+                    float scanline = sin(vUv.y * 800.0 + time * 10.0) * 0.04; 
+                    vec4 cr = texture2D(tDiffuse, vUv + offset + vec2(0.0, scanline * rand(vec2(time))));
+                    vec4 cga = texture2D(tDiffuse, vUv);
+                    vec4 cb = texture2D(tDiffuse, vUv - offset);
+                    gl_FragColor = vec4(cr.r, cga.g, cb.b, cga.a) + vec4(rand(vUv * time) * 0.05);
+                }`
+        };
+        const rgbShiftPass = new ShaderPass(RGBShiftShader);
+        composer.addPass(rgbShiftPass);
+
+        const wildGlitchPass = new GlitchPass();
+        wildGlitchPass.goWild = false;
+        wildGlitchPass.enabled = false;
+        composer.addPass(wildGlitchPass);
+
+        // --- ASSET BANK ---
+        
+        // 1. SYNAPSE ORIGINAL
+        const groupGrid = new THREE.Group();
+        const gridTop = new THREE.GridHelper(200, 100, 0xff00ff, 0x222222); gridTop.position.y = 20;
+        const gridBot = new THREE.GridHelper(200, 100, 0x00ffff, 0x222222); gridBot.position.y = -10;
+        groupGrid.add(gridTop, gridBot);
+        scene.add(groupGrid);
+
+        const groupParticles = new THREE.Points(
+            new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(9000).map(()=>(Math.random()-0.5)*100), 3)),
+            new THREE.PointsMaterial({ size: 0.2, color: 0xff00aa, blending: THREE.AdditiveBlending, transparent: true })
+        );
+        scene.add(groupParticles);
+
+        const groupCore = new THREE.Group();
+        const core = new THREE.Mesh(new THREE.IcosahedronGeometry(4, 2), new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.8 }));
+        groupCore.add(core);
+        scene.add(groupCore);
+
+        // 2. NEON HORIZON
+        const groupValley = new THREE.Group();
+        const valleyGeo = new THREE.PlaneGeometry(100, 100, 40, 40);
+        const vPos = valleyGeo.attributes.position;
+        for (let i = 0; i < vPos.count; i++) {
+            const x = vPos.getX(i);
+            vPos.setZ(i, (Math.abs(x)>5) ? (Math.random() * (Math.abs(x)-5))*1.5 : 0);
+        }
+        valleyGeo.computeVertexNormals();
+        const valleyMesh = new THREE.Mesh(valleyGeo, new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff0055, emissiveIntensity: 0.5, wireframe: true }));
+        valleyMesh.rotation.x = -Math.PI/2; valleyMesh.position.y = -10;
+        groupValley.add(valleyMesh);
+        scene.add(groupValley);
+
+        // 3. GENESIS
+        const groupGenesis = new THREE.Group();
+        const genesisCoreMat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0 }, uBass: { value: 0 } },
+            vertexShader: `
+                uniform float uTime; uniform float uBass; varying vec2 vUv; varying float vDisplacement;
+                // Simplex Noise (Inline for speed)
+                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+                float snoise(vec3 v) {
+                    const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                    vec3 i  = floor(v + dot(v, C.yyy) ); vec3 x0 = v - i + dot(i, C.xxx) ;
+                    vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g;
+                    vec3 i1 = min( g.xyz, l.zxy ); vec3 i2 = max( g.xyz, l.zxy );
+                    vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy;
+                    i = mod289(i);
+                    vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+                    float n_ = 0.142857142857; vec3  ns = n_ * D.wyz - D.xzx;
+                    vec4 j = p - 49.0 * floor(p * ns.z * ns.z); vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_ );
+                    vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy; vec4 h = 1.0 - abs(x) - abs(y);
+                    vec4 b0 = vec4( x.xy, y.xy ); vec4 b1 = vec4( x.zw, y.zw );
+                    vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
+                    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+                    vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+                    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+                    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                    m = m * m; return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+                }
+                void main() {
+                    vUv = uv;
+                    float noise = snoise(position * 1.5 + uTime * 0.5); vDisplacement = noise;
+                    float spike = snoise(position * 4.0 + uTime) * uBass * 2.0;
+                    vec3 newPos = position + normal * (noise * 0.2 + spike);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime; varying vec2 vUv; varying float vDisplacement;
+                void main() {
+                    vec3 colorA = vec3(0.0, 0.95, 1.0); vec3 colorB = vec3(1.0, 0.0, 1.0);
+                    float mixVal = smoothstep(-0.2, 0.5, vDisplacement);
+                    vec3 finalColor = mix(colorA, colorB, mixVal);
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `,
+            wireframe: true
+        });
+        const genesisCore = new THREE.Mesh(new THREE.IcosahedronGeometry(3, 60), genesisCoreMat);
+        groupGenesis.add(genesisCore);
+        const torusGeo = new THREE.TorusGeometry(8, 0.05, 16, 100);
+        const torusMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, transparent: true, opacity: 0.5 });
+        const ring1 = new THREE.Mesh(torusGeo, torusMat);
+        const ring2 = new THREE.Mesh(torusGeo, torusMat);
+        ring2.rotation.x = Math.PI/2;
+        groupGenesis.add(ring1); groupGenesis.add(ring2);
+        scene.add(groupGenesis);
+
+        // 4. WARP (NEW: HYPER COLOR)
+        const groupWarp = new THREE.Group();
+        
+        // Warp Tunnel
+        const tunnelGeo = new THREE.CylinderGeometry(15, 15, 300, 32, 60, true);
+        tunnelGeo.scale(-1, 1, 1);
+        const tunnelMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending });
+        const warpTunnel = new THREE.Mesh(tunnelGeo, tunnelMat);
+        warpTunnel.rotation.x = Math.PI/2;
+        groupWarp.add(warpTunnel);
+
+        // Warp Particles
+        const wpCount = 4000;
+        const wpGeo = new THREE.BufferGeometry();
+        const wpPos = new Float32Array(wpCount * 3);
+        const wpCol = new Float32Array(wpCount * 3);
+        const colVar = new THREE.Color();
+        for(let i=0; i<wpCount; i++) {
+            const r = Math.random() * 14; const th = Math.random() * Math.PI * 2;
+            wpPos[i*3] = r * Math.cos(th); wpPos[i*3+1] = r * Math.sin(th); wpPos[i*3+2] = (Math.random()-0.5)*300;
+            colVar.setHSL(Math.random(), 1.0, 0.6);
+            wpCol[i*3] = colVar.r; wpCol[i*3+1] = colVar.g; wpCol[i*3+2] = colVar.b;
+        }
+        wpGeo.setAttribute('position', new THREE.BufferAttribute(wpPos, 3));
+        wpGeo.setAttribute('color', new THREE.BufferAttribute(wpCol, 3));
+        const warpParticles = new THREE.Points(wpGeo, new THREE.PointsMaterial({ size: 0.2, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true }));
+        groupWarp.add(warpParticles);
+
+        // Speed Rings
+        const srGeo = new THREE.TorusGeometry(12, 0.3, 8, 32);
+        const speedRings = [];
+        for(let i=0; i<15; i++) {
+            const r = new THREE.Mesh(srGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            r.position.z = -i*20;
+            groupWarp.add(r);
+            speedRings.push(r);
+        }
+
+        // Morph Shapes
+        const morphGroup = new THREE.Group();
+        const mMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0, metalness: 0.9, wireframe: true });
+        const mShapes = [];
+        const m1 = new THREE.Mesh(new THREE.DodecahedronGeometry(3,0), mMat.clone()); mShapes.push(m1); morphGroup.add(m1);
+        const m2 = new THREE.Mesh(new THREE.TorusKnotGeometry(2,0.5,120,20), mMat.clone()); m2.scale.set(0,0,0); mShapes.push(m2); morphGroup.add(m2);
+        groupWarp.add(morphGroup);
+        scene.add(groupWarp);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040); scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x00ffff, 1, 50); pointLight.position.set(0, 5, 0); scene.add(pointLight);
+        const warpLight = new THREE.PointLight(0xff00ff, 2, 40); warpLight.position.set(0,0,0); groupWarp.add(warpLight);
+
+
+        // --- UTILS ---
+        const words = ["WARP", "SPEED", "HYPER", "MACH", "FLUX", "CORE", "BREACH", "SYNC"];
+        const flashEl = document.getElementById('big-text');
+        const barTop = document.getElementById('bar-top');
+        const barBot = document.getElementById('bar-bottom');
+        
+        function flash(text) {
+            flashEl.innerText = text || words[Math.floor(Math.random() * words.length)];
+            flashEl.style.color = Math.random() > 0.5 ? "#fff" : "#0ff";
+            flashEl.classList.remove('flash-active');
+            void flashEl.offsetWidth; 
+            flashEl.classList.add('flash-active');
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        const audio = new AudioEngine();
+        let startTime = 0;
+        let running = false;
+        let lastTime = 0;
+
+        function animate() {
+            if(!running) return; // Stop loop cleanly
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            const delta = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+            const time = (Date.now() - startTime) / 1000;
+            const analysis = audio.getAnalysis();
+            const { bass, mid } = analysis;
+            
+            // HUD
+            document.getElementById('timer').innerText = time.toFixed(2);
+            document.getElementById('beat-val').innerText = bass.toFixed(2);
+            document.getElementById('progress-bar').style.width = (time/DURATION)*100 + "%";
+
+            // Universal Animations
+            core.rotation.y += 0.02; core.scale.setScalar(1 + bass * 0.5);
+            gridBot.position.z = (time * 10) % 20; gridTop.position.z = (time * 10) % 20;
+            valleyMesh.position.z = (time * 10) % 5; 
+            if(bass > 0.7 && Math.random() > 0.8) valleyMesh.material.emissive.setHex(0xffffff);
+            else valleyMesh.material.emissive.setHex(0xff0055);
+
+            // Genesis Animations
+            genesisCoreMat.uniforms.uTime.value = time;
+            genesisCoreMat.uniforms.uBass.value = bass;
+            ring1.rotation.x += 0.02; ring1.rotation.y += 0.02; ring1.scale.setScalar(1 + mid);
+            ring2.rotation.x -= 0.02; ring2.rotation.y -= 0.01; ring2.scale.setScalar(1.5 + bass);
+
+            // Warp Animations (New)
+            const hue = (time * 0.2) % 1;
+            warpTunnel.material.color.setHSL(hue, 1, 0.5);
+            warpTunnel.rotation.z = Math.sin(time) * 0.1;
+            warpTunnel.rotation.y += delta * 0.5;
+            
+            // Speed Rings
+            speedRings.forEach((ring, i) => {
+                ring.position.z += delta * 60;
+                ring.rotation.z += delta;
+                ring.material.color.setHSL((hue + i*0.05)%1, 1, 0.6);
+                if(ring.position.z > 20) ring.position.z = -280;
+            });
+
+            // Warp Particles
+            const wpPos = warpParticles.geometry.attributes.position.array;
+            for(let i=2; i<wpPos.length; i+=3) {
+                wpPos[i] += delta * 80;
+                if(wpPos[i] > 20) wpPos[i] = -280;
+            }
+            warpParticles.geometry.attributes.position.needsUpdate = true;
+            warpParticles.rotation.z -= delta * 0.2;
+
+            // Morph Object
+            const mCycle = 4;
+            const mT = time % (mCycle * mShapes.length);
+            const mIdx = Math.floor(mT / mCycle);
+            const mNext = (mIdx + 1) % mShapes.length;
+            const mProg = (mT % mCycle) / mCycle;
+            for(let i=0; i<mShapes.length; i++) {
+                let s = 0;
+                if(i===mIdx) s = 1 - Math.pow(Math.max(0, mProg-0.8)*5, 2);
+                else if(i===mNext) s = Math.pow(Math.max(0, mProg-0.8)*5, 2);
+                else if(i===mIdx && mProg<=0.8) s=1;
+                
+                mShapes[i].rotation.x += delta*2; mShapes[i].rotation.y += delta*3;
+                mShapes[i].scale.lerp(new THREE.Vector3(s,s,s), delta*10);
+                mShapes[i].material.emissive.setHSL(hue, 1, 0.5);
+                mShapes[i].material.color.setHSL((hue+0.2)%1, 1, 0.5);
+            }
+
+            // Standard Particles
+            const pArr = groupParticles.geometry.attributes.position.array;
+            for(let i=0; i<9000; i+=3) {
+                let x = pArr[i]; let z = pArr[i+2];
+                const angle = 0.001 * (100 - Math.sqrt(x*x+z*z)) + (bass * 0.01); 
+                pArr[i] = x * Math.cos(angle) - z * Math.sin(angle);
+                pArr[i+2] = x * Math.sin(angle) + z * Math.cos(angle);
+            }
+            groupParticles.geometry.attributes.position.needsUpdate = true;
+
+            // Shader Glitch
+            rgbShiftPass.uniforms.time.value = time;
+            rgbShiftPass.uniforms.amount.value = 0.005 + (bass * 0.02);
+
+            // --- SEQUENCER (WARP EDITION) ---
+            
+            // Defaults
+            groupGrid.visible = false; groupParticles.visible = false; groupCore.visible = false;
+            groupValley.visible = false; groupGenesis.visible = false; groupWarp.visible = false;
+            wildGlitchPass.enabled = false;
+            barTop.style.height = '0vh'; barBot.style.height = '0vh';
+            camera.fov = 75;
+
+            // 0-20s: SUBLIMINAL CUTS (High Intensity)
+            if (time < 20) {
+                const beat = Math.floor(time * 2); // Change every 0.5s approx
+                const mode = beat % 4; // 4 modes
+                
+                if (mode === 0) { // STANDARD
+                    document.getElementById('scene-text').innerText = "SCENE: INJECTION";
+                    document.getElementById('gpu-val').innerText = "NOMINAL";
+                    groupGrid.visible = true; groupCore.visible = true;
+                    camera.position.set(0, 0, 60 - (time%10)*2);
+                    camera.lookAt(0,0,0);
+                } 
+                else if (mode === 1) { // WARP (110 FOV)
+                    document.getElementById('scene-text').innerText = "SCENE: WARP_DRIVE";
+                    document.getElementById('gpu-val').innerText = "MACH 10";
+                    groupWarp.visible = true;
+                    camera.fov = 110;
+                    camera.position.set(0,0,10);
+                    camera.lookAt(0,0,-100);
+                    camera.rotation.z = Math.sin(time*10)*0.1; // Shake
+                }
+                else if (mode === 2) { // GENESIS
+                    document.getElementById('scene-text').innerText = "SCENE: GENESIS";
+                    groupGenesis.visible = true;
+                    camera.position.set(0,0,15);
+                    camera.lookAt(0,0,0);
+                    barTop.style.height = '15vh'; barBot.style.height = '15vh';
+                    wildGlitchPass.enabled = true;
+                }
+                else { // MORPH (Using Warp Group)
+                    document.getElementById('scene-text').innerText = "SCENE: POLY_MORPH";
+                    groupWarp.visible = true; // Has morph group inside
+                    warpTunnel.visible = false; // Hide tunnel temporarily
+                    camera.position.set(0,0,15);
+                    camera.lookAt(0,0,0);
+                }
+                
+                if(bass > 0.8) flash();
+
+            } else if (time < 30) {
+                // VORTEX
+                document.getElementById('scene-text').innerText = "SCENE: VORTEX";
+                groupParticles.visible = true; groupCore.visible = true;
+                camera.position.set(Math.sin(time)*30, 20, Math.cos(time)*30);
+                camera.lookAt(0,0,0);
+                camera.fov = 75;
+
+            } else if (time < 45) {
+                // WARP SUSTAIN (New)
+                document.getElementById('scene-text').innerText = "SCENE: HYPER_TUNNEL";
+                groupWarp.visible = true; warpTunnel.visible = true;
+                camera.fov = 100;
+                camera.position.set(Math.sin(time)*2, Math.cos(time)*2, 10);
+                camera.lookAt(0,0,-100);
+                camera.rotation.z = Math.sin(time)*0.2;
+
+            } else if (time < 55) {
+                // NEON HORIZON
+                document.getElementById('scene-text').innerText = "SCENE: NEON_HORIZON";
+                groupValley.visible = true; groupGrid.visible = false;
+                camera.fov = 75;
+                camera.position.set(Math.sin(time*0.5)*5, 5, 10);
+                camera.lookAt(0, 2, -10);
+                camera.rotation.z = 0;
+
+            } else if (time < 70) {
+                // THE DROP (OMNI-MIX)
+                document.getElementById('scene-text').innerText = "SCENE: SINGULARITY";
+                
+                groupGrid.visible = true; groupParticles.visible = true; groupValley.visible = true;
+                groupWarp.visible = true; warpTunnel.visible = true; // Add warp tunnel to drop
+                
+                if (bass > 0.8) {
+                    wildGlitchPass.enabled = Math.random() > 0.8;
+                    barTop.style.height = '10vh'; barBot.style.height = '10vh';
+                    flash();
+                    
+                    const cuts = [[0, 50, 1], [0, 0, 8], [40, 0, 40], [-20, -20, -5]];
+                    const pick = cuts[Math.floor(time*2.5) % 4];
+                    camera.position.set(pick[0], pick[1], pick[2]);
+                    camera.lookAt(0,0,0);
+                    camera.rotation.z = (Math.random()-0.5)*0.5;
+                } else {
+                    camera.position.z += 0.5;
+                }
+
+            } else if (time < 84) {
+                // STABILIZE
+                document.getElementById('scene-text').innerText = "SCENE: STABILIZE";
+                groupGenesis.visible = true; groupParticles.visible = true;
+                camera.position.z += 0.1;
+                barTop.style.height = '0vh'; barBot.style.height = '0vh';
+            } else {
+                // CLEAN FINISH (Black Screen Fix)
+                running = false;
+                document.getElementById('overlay').style.display = 'flex';
+                document.getElementById('overlay').style.opacity = 1;
+                document.getElementById('overlay').innerHTML = `
+                    <h1 style="font-family:'Orbitron'; letter-spacing:10px;">SYSTEM HALTED</h1>
+                    <button id="restart-btn" style="border:1px solid #0ff; background:transparent; color:#0ff; padding:15px 40px; font-family:'Orbitron'; cursor:pointer; margin-top:20px;">REBOOT SYSTEM</button>
+                `;
+                document.getElementById('restart-btn').addEventListener('click', () => location.reload());
+            }
+
+            camera.updateProjectionMatrix();
+            composer.render();
+        }
+
+        // --- INIT ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('overlay').style.opacity = 0;
+            setTimeout(() => { document.getElementById('overlay').style.display = 'none'; }, 500);
+            document.getElementById('hud-layer').style.display = 'block';
+            audio.start();
+            startTime = Date.now();
+            lastTime = performance.now();
+            running = true;
+            animate();
+        });
+
+    </script>
+</body>
+</html>
+<!-- synapse_v0_7_0.html -->

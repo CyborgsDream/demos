@@ -28,7 +28,7 @@
       padding: 32px;
     }
     header {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto 28px auto;
       display: grid;
       grid-template-columns: 1fr auto;
@@ -84,9 +84,13 @@
       cursor: pointer;
       box-shadow: 0 10px 30px rgba(0,255,255,0.25);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
     .link-btn:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 14px 34px rgba(255,0,255,0.28); }
-    main { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    main { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
     section {
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
       border: 1px solid var(--border);
@@ -100,12 +104,47 @@
       margin: 0 0 14px;
       text-transform: uppercase;
       font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
+    .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .legend span {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,0.04); color: #d5e8ff; font-size: 12px;
+      border: 1px solid var(--border);
     }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .search {
+      flex: 1;
+      min-width: 200px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #e7f3ff;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+    .toggle {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: #c6d9ec;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .toggle.active { background: rgba(0,255,255,0.08); color: #0ff; border-color: rgba(0,255,255,0.5); }
+    .scene-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -114,7 +153,11 @@
       position: relative;
       overflow: hidden;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
     }
+    .card:hover { transform: translateY(-2px); border-color: rgba(0,255,255,0.4); }
+    .card.active { border-color: rgba(0,255,255,0.8); box-shadow: 0 0 0 1px rgba(0,255,255,0.3), inset 0 0 0 1px rgba(255,255,255,0.05); }
     .card::before {
       content: '';
       position: absolute;
@@ -124,42 +167,47 @@
       opacity: 0.8;
       pointer-events: none;
     }
-    .card h3 {
-      margin: 0 0 6px;
-      font-size: 17px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
+    .card h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: 1px; text-transform: uppercase; }
     .meta { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
-    .tag {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      color: #d5e8ff;
-      border: 1px solid var(--border);
-      font-size: 12px;
-      letter-spacing: 0.5px;
-    }
-    p { margin: 0 0 10px; color: #c6d9ec; line-height: 1.5; }
-    .timeline {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-    }
+    .timeline { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); letter-spacing: 0.4px; text-transform: uppercase; }
     .pill { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); }
-    .effects-list {
-      list-style: none;
-      padding: 0; margin: 0;
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.06); color: #d5e8ff; border: 1px solid var(--border); font-size: 12px; letter-spacing: 0.5px; }
+    p { margin: 0 0 10px; color: #c6d9ec; line-height: 1.5; }
+    .scene-detail {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 10px;
+      align-content: start;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
     }
-    .effects-list li {
+    .scene-detail h3 { margin: 0; letter-spacing: 1px; text-transform: uppercase; }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .metric { padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: #b8d5ef; font-size: 13px; }
+    .note-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .note-list li { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+    .note-list strong { color: #0ff; letter-spacing: 0.5px; }
+    .progress {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress span {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.25s ease;
+    }
+    .effects-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .effect {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -168,17 +216,25 @@
       gap: 6px;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
     }
-    .effects-list strong { text-transform: uppercase; letter-spacing: 1px; }
-    .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .legend span {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,0.04); color: #d5e8ff; font-size: 12px;
+    .effect header { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .effect button {
+      background: rgba(255,255,255,0.08);
       border: 1px solid var(--border);
+      color: #e7f3ff;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
+    .effect button:hover { border-color: rgba(0,255,255,0.4); color: #0ff; }
+    .effect .body { color: #c6d9ec; line-height: 1.45; display: none; }
+    .effect.open .body { display: block; }
     footer { color: var(--muted); text-align: center; font-size: 13px; margin-top: 14px; }
-    @media (max-width: 720px) {
+    @media (max-width: 900px) {
       header { grid-template-columns: 1fr; }
       body { padding: 20px; }
+      .scene-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -186,7 +242,7 @@
   <header>
     <div>
       <h1>SYNAPSE:07 <span>WARP EDITION</span></h1>
-      <p class="subtitle">Curated gallery of every scene transition, motion motif, and post-processing effect defined in the original WebGL show. Use this as a visual inventory before diving into <code>synapse_v0_7_0.html</code>.</p>
+      <p class="subtitle">Interactive breakdown of every sequenced scene and post stack defined in <code>synapse_v0_7_0.html</code>. Click a card to see timing, assets, and the live code hooks that drive it.</p>
       <div class="legend">
         <span>🎛️ Sequenced timelines</span>
         <span>💠 Geometry banks</span>
@@ -196,128 +252,269 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end;">
       <div class="badge">BPM 138 <small>Duration 84s</small></div>
-      <a class="link-btn" href="synapse_v0_7_0.html">Launch full experience</a>
+      <a class="link-btn" href="synapse_v0_7_0.html">Launch full experience →</a>
     </div>
   </header>
 
   <main>
     <section>
       <h2>Scene roster</h2>
-      <div class="grid" id="scene-grid"></div>
+      <div class="controls">
+        <input id="scene-search" class="search" type="search" placeholder="Filter by name, asset, or tag…">
+        <button class="toggle active" data-filter="all">All scenes</button>
+        <button class="toggle" data-filter="early">0 – 30s</button>
+        <button class="toggle" data-filter="mid">30 – 55s</button>
+        <button class="toggle" data-filter="late">55 – 84s</button>
+      </div>
+      <div class="scene-layout">
+        <div class="grid" id="scene-grid"></div>
+        <aside class="scene-detail" id="scene-detail"></aside>
+      </div>
     </section>
 
     <section>
       <h2>Effect stack & motion hooks</h2>
+      <div class="controls">
+        <p style="margin:0; color: var(--muted);">Tap to reveal how each pass or hook is wired into the render loop.</p>
+      </div>
       <ul class="effects-list" id="effects-list"></ul>
     </section>
   </main>
 
-  <footer>Built for rapid overview of SYNAPSE sequencing. Cards update directly from the underlying scene metadata defined below.</footer>
+  <footer>Cards are sourced from the scene switcher and post-processing pipeline inside the SYNAPSE 07 module to make browsing easy.</footer>
 
   <script>
     const scenes = [
       {
         name: 'Injection',
-        time: '0s – 20s (cut cycle A)',
+        range: [0, 20],
         focus: 'Dual grid planes + wireframe icosahedron core',
         description: 'Baseline SYNAPSE look with magenta / cyan grids sliding forward and the central icosahedron pulsing to bass.',
-        tags: ['GridHelper stack', 'Core pulse', 'Camera dolly', 'Bass driven scale']
+        tags: ['GridHelper stack', 'Core pulse', 'Camera dolly', 'Bass driven scale'],
+        assets: 'groupGrid, groupCore',
+        codeNotes: [
+          { label: 'Camera', text: '75° FOV, forward dolly from z ≈ 60 while tracking the origin during the cut-cycle switcher.' },
+          { label: 'Motion', text: 'Grids translate on z each frame; the wireframe core scales with analyser bass energy.' }
+        ]
       },
       {
         name: 'Warp_Drive',
-        time: '0s – 20s (cut cycle B)',
+        range: [0, 20],
         focus: 'Warp tunnel + chromatic particles',
         description: 'High-FOV warp tunnel, additive warp particles, and speed rings, paired with camera shake for rapid acceleration.',
-        tags: ['FOV 110', 'Warp tunnel', 'Speed rings', 'Camera shake']
+        tags: ['FOV 110', 'Warp tunnel', 'Speed rings', 'Camera shake'],
+        assets: 'groupWarp, warpTunnel, warpParticles',
+        codeNotes: [
+          { label: 'Camera', text: 'Switches to 110° FOV and locks forward lookAt with subtle roll oscillation for a speed-vibe.' },
+          { label: 'FX', text: 'Warp tunnel hue set via HSL per frame; speed rings recycle when they pass z > 20 for infinite motion.' }
+        ]
       },
       {
         name: 'Genesis',
-        time: '0s – 20s (cut cycle C)',
+        range: [0, 20],
         focus: 'Noise-displaced shader core + dual torus rings',
         description: 'Simplex noise shader pushes the core surface while torus rings counter-rotate; cinematic bars and glitch burst on entry.',
-        tags: ['ShaderMaterial', 'Glitch pass', 'Cinematic bars', 'Noise displacement']
+        tags: ['ShaderMaterial', 'Glitch pass', 'Cinematic bars', 'Noise displacement'],
+        assets: 'groupGenesis, genesisCoreMat, rings',
+        codeNotes: [
+          { label: 'Shader', text: 'Icosahedron uses custom vertex displacement mixing simplex noise with bass to create spikes.' },
+          { label: 'Post', text: 'Enables glitch pass and raises cinematic bars when Genesis is active in the timeline.' }
+        ]
       },
       {
         name: 'Poly_Morph',
-        time: '0s – 20s (cut cycle D)',
+        range: [0, 20],
         focus: 'Dodecahedron → TorusKnot morph loop',
         description: 'Morph group scales between geometric forms while warp lighting and emissive hues cycle through the HSL spectrum.',
-        tags: ['Morph shapes', 'HSL emissive', 'Rapid rotation']
+        tags: ['Morph shapes', 'HSL emissive', 'Rapid rotation'],
+        assets: 'morphGroup, mShapes',
+        codeNotes: [
+          { label: 'Morph logic', text: 'Four-second cycles lerp the visible scale between mesh presets, with bass-driven emissive HSL colors.' },
+          { label: 'Camera', text: 'Uses warp staging but hides the tunnel; camera frames the morphs at z ≈ 15.' }
+        ]
       },
       {
         name: 'Vortex',
-        time: '20s – 30s',
+        range: [20, 30],
         focus: 'Particle field orbiting the wireframe core',
         description: 'Camera orbits wide while additive particles swirl inward; core continues to pulse on bass hits.',
-        tags: ['Orbit cam', 'Particle spin', 'Core pulse']
+        tags: ['Orbit cam', 'Particle spin', 'Core pulse'],
+        assets: 'groupParticles, groupCore',
+        codeNotes: [
+          { label: 'Camera', text: 'Positions camera on a 30 unit orbit with y = 20, looking back to the origin for parallax.' },
+          { label: 'Particles', text: 'Per-frame rotation applies small angle spin scaled by analyser bass for the swirl effect.' }
+        ]
       },
       {
         name: 'Hyper_Tunnel',
-        time: '30s – 45s',
+        range: [30, 45],
         focus: 'Warp sustain with tunnel visible',
         description: 'A steady warp corridor with rotating rings and color-cycling tunnel wires; camera oscillates for extra parallax.',
-        tags: ['Warp tunnel', 'Speed rings', 'Hue cycling']
+        tags: ['Warp tunnel', 'Speed rings', 'Hue cycling'],
+        assets: 'groupWarp, warpTunnel, speedRings',
+        codeNotes: [
+          { label: 'Camera', text: 'Maintains forward look with sin/cos wiggle on x/y, keeping fov at 100 for a deep tunnel look.' },
+          { label: 'Motion', text: 'Tunnel rotation plus HSL hue update every frame; rings recycle and recolor as they advance.' }
+        ]
       },
       {
         name: 'Neon_Horizon',
-        time: '45s – 55s',
+        range: [45, 55],
         focus: 'Wireframe valley floor with emissive ridges',
         description: 'Procedural valley mesh scrolls forward while emissive ridges flash on high bass values to hint at horizon impacts.',
-        tags: ['Wireframe terrain', 'Emissive spikes', 'Forward scroll']
+        tags: ['Wireframe terrain', 'Emissive spikes', 'Forward scroll'],
+        assets: 'groupValley, valleyMesh',
+        codeNotes: [
+          { label: 'Terrain', text: 'Plane vertices are pre-offset by x-distance to create ridges; z position increments over time.' },
+          { label: 'Bass hook', text: 'Emissive color briefly flips to white when bass exceeds 0.7 before returning to hot pink.' }
+        ]
       },
       {
         name: 'Singularity',
-        time: '55s – 70s',
+        range: [55, 70],
         focus: 'All assets combined with random camera cuts',
-        description: 'Full drop: grids, particles, valley, warp tunnel, and morphs stack together with aggressive flash/glitch on bass over 0.8.',
-        tags: ['Full stack', 'Glitch bursts', 'Flash text', 'Random camera cuts']
+        description: 'Full drop: grids, particles, valley, warp tunnel, and morphs stack together with aggressive flash/glitch on heavy bass.',
+        tags: ['Full stack', 'Glitch bursts', 'Flash text', 'Random camera cuts'],
+        assets: 'groupGrid, groupParticles, groupValley, groupWarp',
+        codeNotes: [
+          { label: 'Bass events', text: 'On bass > 0.8 the glitch pass toggles, cinematic bars tighten, and flash text fires.' },
+          { label: 'Cuts', text: 'Camera jumps through a preset array of positions/rotations to emphasize drop hits.' }
+        ]
       },
       {
         name: 'Stabilize',
-        time: '70s – 84s',
+        range: [70, 84],
         focus: 'Genesis core + particle drift cool-down',
         description: 'Draws back to the shader core and particle cloud while cinematic bars retract for a clean glide-out.',
-        tags: ['Cool-down', 'Genesis core', 'Smooth pullback']
+        tags: ['Cool-down', 'Genesis core', 'Smooth pullback'],
+        assets: 'groupGenesis, groupParticles',
+        codeNotes: [
+          { label: 'Camera', text: 'Slowly increases camera z position each frame while bars collapse to zero height.' },
+          { label: 'Focus', text: 'Keeps shader core visible alongside particles for a minimal outro.' }
+        ]
       }
     ];
 
     const effects = [
-      { name: 'Unreal Bloom', detail: 'Amplifies neon edges across grids, particles, and warp tunnel for a soft glow.', extra: 'Pass: UnrealBloomPass' },
-      { name: 'RGB Shift + Scanline', detail: 'Chromatic aberration with animated scanline wobble tied to time and bass.', extra: 'ShaderPass: RGBShiftShader' },
-      { name: 'Glitch Burst', detail: 'Triggered in Genesis + Singularity sections, with probability spike on heavy bass.', extra: 'GlitchPass (goWild=false)' },
-      { name: 'Flash Layer', detail: 'Big-word overlays (“WARP / HYPER / MACH…”) slammed on strong bass events.', extra: 'CSS keyframe flash-anim' },
-      { name: 'Audio Reactive Geometry', detail: 'Bass drives scale for the core, valley emissive, RGB shift strength, and morph spikes.', extra: 'Analyser FFT (512), bass bin index 2' },
-      { name: 'Speed Rings & Warp Particles', detail: 'Forward-driving rings recycle positions; HSL hues rotate over time for chroma motion.', extra: 'TorusGeometry + BufferGeometry points' },
-      { name: 'Cinematic Bars', detail: 'Top/bottom bars animate in during Genesis and drop moments for quick aspect shifts.', extra: 'CSS height transitions' },
-      { name: 'Camera Modes', detail: 'Dolly-ins, orbit paths, shake, and random cut presets map to each sequenced scene.', extra: 'FOV swaps between 75–110' }
+      { name: 'Unreal Bloom', detail: 'Amplifies neon edges across grids, particles, and warp tunnel for a soft glow.', extra: 'Pass: UnrealBloomPass', hook: 'Configured with strength 1.5 / radius 0.5 and attached to the composer after the RenderPass.' },
+      { name: 'RGB Shift + Scanline', detail: 'Chromatic aberration with animated scanline wobble tied to time and bass.', extra: 'ShaderPass: RGBShiftShader', hook: 'Custom shader mixes offset color channels and adds sinusoidal scanlines using the time uniform.' },
+      { name: 'Glitch Burst', detail: 'Triggered in Genesis + Singularity sections with probability spike on heavy bass.', extra: 'GlitchPass (goWild=false)', hook: 'Enabled by the scene switcher when entering Genesis or when bass exceeds 0.8 during the drop.' },
+      { name: 'Flash Layer', detail: 'Big-word overlays (“WARP / HYPER / MACH…”) slammed on strong bass events.', extra: 'CSS keyframe flash-anim', hook: 'flash() swaps the word, restarts the keyframe class, and is invoked whenever analyser bass crosses 0.8.' },
+      { name: 'Audio Reactive Geometry', detail: 'Bass drives scale for the core, valley emissive, RGB shift strength, and morph spikes.', extra: 'Analyser FFT (512), bass bin index 2', hook: 'Analyser data is sampled each frame; bass/mid values update uniforms and transforms before rendering.' },
+      { name: 'Speed Rings & Warp Particles', detail: 'Forward-driving rings recycle positions; HSL hues rotate over time for chroma motion.', extra: 'TorusGeometry + BufferGeometry points', hook: 'Z positions increment every frame; when a ring or particle crosses the camera it loops to the back of the tunnel.' },
+      { name: 'Cinematic Bars', detail: 'Top/bottom bars animate in during Genesis and drop moments for quick aspect shifts.', extra: 'CSS height transitions', hook: 'Scene logic sets bar heights to 10–15vh for dramatic moments and back to 0vh when stabilizing.' },
+      { name: 'Camera Modes', detail: 'Dolly-ins, orbit paths, shake, and random cut presets map to each sequenced scene.', extra: 'FOV swaps between 75–110', hook: 'The main animate switcher adjusts camera FOV, position, lookAt, and roll depending on current time block.' }
     ];
 
     const sceneGrid = document.getElementById('scene-grid');
-    scenes.forEach(scene => {
-      const card = document.createElement('article');
-      card.className = 'card';
-      card.innerHTML = `
-        <h3>${scene.name}</h3>
-        <div class="timeline">
-          <span class="pill">${scene.time}</span>
-          <span class="pill">${scene.focus}</span>
+    const sceneDetail = document.getElementById('scene-detail');
+    const searchInput = document.getElementById('scene-search');
+    const toggleButtons = Array.from(document.querySelectorAll('.toggle'));
+
+    function formatRange([start, end]) {
+      return `${start}s – ${end}s`;
+    }
+
+    function renderScenes(filter = 'all') {
+      const term = searchInput.value.toLowerCase();
+      sceneGrid.innerHTML = '';
+      const filtered = scenes.filter(scene => {
+        const inTerm = !term || `${scene.name} ${scene.description} ${scene.tags.join(' ')} ${scene.assets}`.toLowerCase().includes(term);
+        if (!inTerm) return false;
+        if (filter === 'early') return scene.range[1] <= 30;
+        if (filter === 'mid') return scene.range[0] >= 30 && scene.range[1] <= 55;
+        if (filter === 'late') return scene.range[0] >= 55;
+        return true;
+      });
+
+      filtered.forEach((scene, idx) => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.dataset.index = idx;
+        card.innerHTML = `
+          <h3>${scene.name}</h3>
+          <div class="timeline">
+            <span class="pill">${formatRange(scene.range)}</span>
+            <span class="pill">${scene.focus}</span>
+          </div>
+          <p>${scene.description}</p>
+          <div class="tags">${scene.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        `;
+        card.addEventListener('click', () => selectScene(scene, card));
+        sceneGrid.appendChild(card);
+      });
+
+      const firstCard = sceneGrid.querySelector('.card');
+      if (firstCard) {
+        firstCard.click();
+      } else {
+        sceneDetail.innerHTML = '<p style="color: var(--muted);">No scenes match your filters yet.</p>';
+      }
+    }
+
+    function selectScene(scene, card) {
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      if (card) card.classList.add('active');
+
+      const duration = scene.range[1] - scene.range[0];
+      const progressWidth = (duration / 84) * 100;
+
+      sceneDetail.innerHTML = `
+        <div style="display:flex; justify-content: space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3>${scene.name}</h3>
+            <div class="badge-row">
+              <span class="metric">${formatRange(scene.range)}</span>
+              <span class="metric">Assets: ${scene.assets}</span>
+            </div>
+          </div>
+          <div class="progress" aria-label="Scene duration proportion of show">
+            <span style="width:${progressWidth}%;"></span>
+          </div>
         </div>
         <p>${scene.description}</p>
         <div class="tags">${scene.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <ul class="note-list">${scene.codeNotes.map(note => `<li><strong>${note.label}</strong><br>${note.text}</li>`).join('')}</ul>
       `;
-      sceneGrid.appendChild(card);
+    }
+
+    searchInput.addEventListener('input', () => {
+      renderScenes(toggleButtons.find(btn => btn.classList.contains('active')).dataset.filter);
+    });
+
+    toggleButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderScenes(btn.dataset.filter);
+      });
     });
 
     const effectList = document.getElementById('effects-list');
     effects.forEach(effect => {
       const li = document.createElement('li');
+      li.className = 'effect';
       li.innerHTML = `
-        <strong>${effect.name}</strong>
-        <span>${effect.detail}</span>
-        <small style="color: var(--muted);">${effect.extra}</small>
+        <header>
+          <div>
+            <strong style="text-transform: uppercase; letter-spacing:1px;">${effect.name}</strong>
+            <div class="meta">${effect.detail}</div>
+          </div>
+          <button type="button">Details</button>
+        </header>
+        <div class="body">
+          <p>${effect.hook}</p>
+          <small style="color: var(--muted);">${effect.extra}</small>
+        </div>
       `;
+      const btn = li.querySelector('button');
+      btn.addEventListener('click', () => {
+        li.classList.toggle('open');
+      });
       effectList.appendChild(li);
     });
+
+    renderScenes();
   </script>
 </body>
 </html>

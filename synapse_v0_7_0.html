@@ -84,6 +84,22 @@
             position: absolute; top: 0; left: 0; height: 4px; background: #0ff; width: 0%; z-index: 99;
             box-shadow: 0 0 10px #0ff;
         }
+
+        #control-panel {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(0,255,255,0.4);
+            color: #0ff; padding: 12px 18px; border-radius: 8px; z-index: 120;
+            font-family: 'Share Tech Mono', monospace; display: flex; gap: 14px; align-items: center;
+        }
+
+        #control-panel label { font-size: 12px; letter-spacing: 1px; }
+        #control-panel select, #control-panel input[type="checkbox"] { margin-left: 6px; }
+        #control-panel select {
+            background: #000; color: #0ff; border: 1px solid #0ff; padding: 6px; border-radius: 4px;
+        }
+        #control-panel .toggle {
+            display: inline-flex; align-items: center; gap: 6px; color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -118,6 +134,14 @@
 
     <div class="scanlines"></div>
     <div id="progress-bar"></div>
+
+    <div id="control-panel">
+        <label for="scene-select">Scene Preview:
+            <select id="scene-select"></select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="auto-toggle"> Auto timeline</label>
+        <label class="toggle"><input type="checkbox" id="audio-toggle" checked> Play audio</label>
+    </div>
 
     <script type="module">
         import * as THREE from 'https://esm.sh/three@0.157.0';
@@ -431,8 +455,152 @@
             flashEl.innerText = text || words[Math.floor(Math.random() * words.length)];
             flashEl.style.color = Math.random() > 0.5 ? "#fff" : "#0ff";
             flashEl.classList.remove('flash-active');
-            void flashEl.offsetWidth; 
+            void flashEl.offsetWidth;
             flashEl.classList.add('flash-active');
+        }
+
+        // --- SCENE SELECTOR ---
+        const sceneOptions = [
+            { id: 'INJECTION', label: 'Injection (Grid + Core)' },
+            { id: 'WARP_DRIVE', label: 'Warp Drive' },
+            { id: 'GENESIS', label: 'Genesis Core' },
+            { id: 'POLY_MORPH', label: 'Poly Morph' },
+            { id: 'VORTEX', label: 'Vortex' },
+            { id: 'HYPER_TUNNEL', label: 'Hyper Tunnel' },
+            { id: 'NEON_HORIZON', label: 'Neon Horizon' },
+            { id: 'SINGULARITY', label: 'Singularity Drop' },
+            { id: 'STABILIZE', label: 'Stabilize' }
+        ];
+
+        const sceneSelect = document.getElementById('scene-select');
+        sceneOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.id; option.textContent = opt.label; sceneSelect.appendChild(option);
+        });
+        let selectedScene = sceneOptions[0].id;
+        sceneSelect.value = selectedScene;
+        sceneSelect.addEventListener('change', (e) => { selectedScene = e.target.value; });
+
+        const autoToggle = document.getElementById('auto-toggle');
+        let autoMode = false;
+        autoToggle.checked = false;
+        autoToggle.addEventListener('change', () => { autoMode = autoToggle.checked; });
+
+        let audioEnabled = true;
+        const audioToggle = document.getElementById('audio-toggle');
+        audioToggle.addEventListener('change', () => { audioEnabled = audioToggle.checked; });
+
+        function resetSceneDefaults() {
+            groupGrid.visible = false; groupParticles.visible = false; groupCore.visible = false;
+            groupValley.visible = false; groupGenesis.visible = false; groupWarp.visible = false;
+            wildGlitchPass.enabled = false;
+            barTop.style.height = '0vh'; barBot.style.height = '0vh';
+            camera.fov = 75; camera.rotation.set(0, 0, 0);
+        }
+
+        function applyScene(sceneId, time, bass) {
+            if (sceneId === 'INJECTION') {
+                document.getElementById('scene-text').innerText = "SCENE: INJECTION";
+                document.getElementById('gpu-val').innerText = "NOMINAL";
+                groupGrid.visible = true; groupCore.visible = true;
+                camera.position.set(0, 0, 60 - (time % 10) * 2);
+                camera.lookAt(0, 0, 0);
+            } else if (sceneId === 'WARP_DRIVE') {
+                document.getElementById('scene-text').innerText = "SCENE: WARP_DRIVE";
+                document.getElementById('gpu-val').innerText = "MACH 10";
+                groupWarp.visible = true; warpTunnel.visible = true;
+                camera.fov = 110;
+                camera.position.set(0, 0, 10);
+                camera.lookAt(0, 0, -100);
+                camera.rotation.z = Math.sin(time * 2) * 0.1;
+            } else if (sceneId === 'GENESIS') {
+                document.getElementById('scene-text').innerText = "SCENE: GENESIS";
+                groupGenesis.visible = true;
+                camera.position.set(0, 0, 15);
+                camera.lookAt(0, 0, 0);
+                barTop.style.height = '15vh'; barBot.style.height = '15vh';
+                wildGlitchPass.enabled = bass > 0.7;
+            } else if (sceneId === 'POLY_MORPH') {
+                document.getElementById('scene-text').innerText = "SCENE: POLY_MORPH";
+                groupWarp.visible = true; warpTunnel.visible = false;
+                camera.position.set(0, 0, 15);
+                camera.lookAt(0, 0, 0);
+            } else if (sceneId === 'VORTEX') {
+                document.getElementById('scene-text').innerText = "SCENE: VORTEX";
+                groupParticles.visible = true; groupCore.visible = true;
+                camera.position.set(Math.sin(time) * 30, 20, Math.cos(time) * 30);
+                camera.lookAt(0, 0, 0);
+            } else if (sceneId === 'HYPER_TUNNEL') {
+                document.getElementById('scene-text').innerText = "SCENE: HYPER_TUNNEL";
+                groupWarp.visible = true; warpTunnel.visible = true;
+                camera.fov = 100;
+                camera.position.set(Math.sin(time) * 2, Math.cos(time) * 2, 10);
+                camera.lookAt(0, 0, -100);
+                camera.rotation.z = Math.sin(time) * 0.2;
+            } else if (sceneId === 'NEON_HORIZON') {
+                document.getElementById('scene-text').innerText = "SCENE: NEON_HORIZON";
+                groupValley.visible = true; groupGrid.visible = false;
+                camera.fov = 75;
+                camera.position.set(Math.sin(time * 0.5) * 5, 5, 10);
+                camera.lookAt(0, 2, -10);
+            } else if (sceneId === 'SINGULARITY') {
+                document.getElementById('scene-text').innerText = "SCENE: SINGULARITY";
+                groupGrid.visible = true; groupParticles.visible = true; groupValley.visible = true;
+                groupWarp.visible = true; warpTunnel.visible = true;
+                if (bass > 0.8) {
+                    wildGlitchPass.enabled = Math.random() > 0.8;
+                    barTop.style.height = '10vh'; barBot.style.height = '10vh';
+                    flash();
+
+                    const cuts = [[0, 50, 1], [0, 0, 8], [40, 0, 40], [-20, -20, -5]];
+                    const pick = cuts[Math.floor(time * 2.5) % 4];
+                    camera.position.set(pick[0], pick[1], pick[2]);
+                    camera.lookAt(0, 0, 0);
+                    camera.rotation.z = (Math.random() - 0.5) * 0.5;
+                } else {
+                    camera.position.set(0, 0, 20 + (time % 5));
+                    camera.lookAt(0, 0, 0);
+                }
+            } else if (sceneId === 'STABILIZE') {
+                document.getElementById('scene-text').innerText = "SCENE: STABILIZE";
+                groupGenesis.visible = true; groupParticles.visible = true;
+                camera.position.set(0, 0, 20 + (time % 5));
+                camera.lookAt(0, 0, 0);
+                barTop.style.height = '0vh'; barBot.style.height = '0vh';
+            }
+        }
+
+        function runAutoSequence(time, bass) {
+            if (time < 20) {
+                const beat = Math.floor(time * 2);
+                const mode = beat % 4;
+
+                if (mode === 0) applyScene('INJECTION', time, bass);
+                else if (mode === 1) applyScene('WARP_DRIVE', time, bass);
+                else if (mode === 2) applyScene('GENESIS', time, bass);
+                else applyScene('POLY_MORPH', time, bass);
+
+                if (bass > 0.8) flash();
+            } else if (time < 30) {
+                applyScene('VORTEX', time, bass);
+            } else if (time < 45) {
+                applyScene('HYPER_TUNNEL', time, bass);
+            } else if (time < 55) {
+                applyScene('NEON_HORIZON', time, bass);
+            } else if (time < 70) {
+                applyScene('SINGULARITY', time, bass);
+            } else if (time < 84) {
+                applyScene('STABILIZE', time, bass);
+            } else {
+                running = false;
+                document.getElementById('overlay').style.display = 'flex';
+                document.getElementById('overlay').style.opacity = 1;
+                document.getElementById('overlay').innerHTML = `
+                    <h1 style="font-family:'Orbitron'; letter-spacing:10px;">SYSTEM HALTED</h1>
+                    <button id="restart-btn" style="border:1px solid #0ff; background:transparent; color:#0ff; padding:15px 40px; font-family:'Orbitron'; cursor:pointer; margin-top:20px;">REBOOT SYSTEM</button>
+                `;
+                document.getElementById('restart-btn').addEventListener('click', () => location.reload());
+            }
         }
 
         // --- MAIN ANIMATION LOOP ---
@@ -455,7 +623,6 @@
             // HUD
             document.getElementById('timer').innerText = time.toFixed(2);
             document.getElementById('beat-val').innerText = bass.toFixed(2);
-            document.getElementById('progress-bar').style.width = (time/DURATION)*100 + "%";
 
             // Universal Animations
             core.rotation.y += 0.02; core.scale.setScalar(1 + bass * 0.5);
@@ -526,116 +693,15 @@
             rgbShiftPass.uniforms.amount.value = 0.005 + (bass * 0.02);
 
             // --- SEQUENCER (WARP EDITION) ---
-            
-            // Defaults
-            groupGrid.visible = false; groupParticles.visible = false; groupCore.visible = false;
-            groupValley.visible = false; groupGenesis.visible = false; groupWarp.visible = false;
-            wildGlitchPass.enabled = false;
-            barTop.style.height = '0vh'; barBot.style.height = '0vh';
-            camera.fov = 75;
 
-            // 0-20s: SUBLIMINAL CUTS (High Intensity)
-            if (time < 20) {
-                const beat = Math.floor(time * 2); // Change every 0.5s approx
-                const mode = beat % 4; // 4 modes
-                
-                if (mode === 0) { // STANDARD
-                    document.getElementById('scene-text').innerText = "SCENE: INJECTION";
-                    document.getElementById('gpu-val').innerText = "NOMINAL";
-                    groupGrid.visible = true; groupCore.visible = true;
-                    camera.position.set(0, 0, 60 - (time%10)*2);
-                    camera.lookAt(0,0,0);
-                } 
-                else if (mode === 1) { // WARP (110 FOV)
-                    document.getElementById('scene-text').innerText = "SCENE: WARP_DRIVE";
-                    document.getElementById('gpu-val').innerText = "MACH 10";
-                    groupWarp.visible = true;
-                    camera.fov = 110;
-                    camera.position.set(0,0,10);
-                    camera.lookAt(0,0,-100);
-                    camera.rotation.z = Math.sin(time*10)*0.1; // Shake
-                }
-                else if (mode === 2) { // GENESIS
-                    document.getElementById('scene-text').innerText = "SCENE: GENESIS";
-                    groupGenesis.visible = true;
-                    camera.position.set(0,0,15);
-                    camera.lookAt(0,0,0);
-                    barTop.style.height = '15vh'; barBot.style.height = '15vh';
-                    wildGlitchPass.enabled = true;
-                }
-                else { // MORPH (Using Warp Group)
-                    document.getElementById('scene-text').innerText = "SCENE: POLY_MORPH";
-                    groupWarp.visible = true; // Has morph group inside
-                    warpTunnel.visible = false; // Hide tunnel temporarily
-                    camera.position.set(0,0,15);
-                    camera.lookAt(0,0,0);
-                }
-                
-                if(bass > 0.8) flash();
+            resetSceneDefaults();
 
-            } else if (time < 30) {
-                // VORTEX
-                document.getElementById('scene-text').innerText = "SCENE: VORTEX";
-                groupParticles.visible = true; groupCore.visible = true;
-                camera.position.set(Math.sin(time)*30, 20, Math.cos(time)*30);
-                camera.lookAt(0,0,0);
-                camera.fov = 75;
-
-            } else if (time < 45) {
-                // WARP SUSTAIN (New)
-                document.getElementById('scene-text').innerText = "SCENE: HYPER_TUNNEL";
-                groupWarp.visible = true; warpTunnel.visible = true;
-                camera.fov = 100;
-                camera.position.set(Math.sin(time)*2, Math.cos(time)*2, 10);
-                camera.lookAt(0,0,-100);
-                camera.rotation.z = Math.sin(time)*0.2;
-
-            } else if (time < 55) {
-                // NEON HORIZON
-                document.getElementById('scene-text').innerText = "SCENE: NEON_HORIZON";
-                groupValley.visible = true; groupGrid.visible = false;
-                camera.fov = 75;
-                camera.position.set(Math.sin(time*0.5)*5, 5, 10);
-                camera.lookAt(0, 2, -10);
-                camera.rotation.z = 0;
-
-            } else if (time < 70) {
-                // THE DROP (OMNI-MIX)
-                document.getElementById('scene-text').innerText = "SCENE: SINGULARITY";
-                
-                groupGrid.visible = true; groupParticles.visible = true; groupValley.visible = true;
-                groupWarp.visible = true; warpTunnel.visible = true; // Add warp tunnel to drop
-                
-                if (bass > 0.8) {
-                    wildGlitchPass.enabled = Math.random() > 0.8;
-                    barTop.style.height = '10vh'; barBot.style.height = '10vh';
-                    flash();
-                    
-                    const cuts = [[0, 50, 1], [0, 0, 8], [40, 0, 40], [-20, -20, -5]];
-                    const pick = cuts[Math.floor(time*2.5) % 4];
-                    camera.position.set(pick[0], pick[1], pick[2]);
-                    camera.lookAt(0,0,0);
-                    camera.rotation.z = (Math.random()-0.5)*0.5;
-                } else {
-                    camera.position.z += 0.5;
-                }
-
-            } else if (time < 84) {
-                // STABILIZE
-                document.getElementById('scene-text').innerText = "SCENE: STABILIZE";
-                groupGenesis.visible = true; groupParticles.visible = true;
-                camera.position.z += 0.1;
-                barTop.style.height = '0vh'; barBot.style.height = '0vh';
+            if (autoMode) {
+                document.getElementById('progress-bar').style.width = Math.min((time / DURATION) * 100, 100) + "%";
+                runAutoSequence(time, bass);
             } else {
-                // CLEAN FINISH (Black Screen Fix)
-                running = false;
-                document.getElementById('overlay').style.display = 'flex';
-                document.getElementById('overlay').style.opacity = 1;
-                document.getElementById('overlay').innerHTML = `
-                    <h1 style="font-family:'Orbitron'; letter-spacing:10px;">SYSTEM HALTED</h1>
-                    <button id="restart-btn" style="border:1px solid #0ff; background:transparent; color:#0ff; padding:15px 40px; font-family:'Orbitron'; cursor:pointer; margin-top:20px;">REBOOT SYSTEM</button>
-                `;
-                document.getElementById('restart-btn').addEventListener('click', () => location.reload());
+                document.getElementById('progress-bar').style.width = '0%';
+                applyScene(selectedScene, time, bass);
             }
 
             camera.updateProjectionMatrix();
@@ -654,7 +720,15 @@
             document.getElementById('overlay').style.opacity = 0;
             setTimeout(() => { document.getElementById('overlay').style.display = 'none'; }, 500);
             document.getElementById('hud-layer').style.display = 'block';
-            audio.start();
+            autoMode = autoToggle.checked;
+            selectedScene = sceneSelect.value;
+            audioEnabled = audioToggle.checked;
+            if (audioEnabled) {
+                audio.start();
+            } else {
+                audio.ctx.resume();
+                audio.startTime = audio.ctx.currentTime;
+            }
             startTime = Date.now();
             lastTime = performance.now();
             running = true;

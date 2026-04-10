@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CycleAtlas — Tracker + Timeline</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2b;
+      --panel-soft: #17233a;
+      --text: #e7eefc;
+      --muted: #9db0ce;
+      --brand: #2fb5ff;
+      --accent: #59f5ae;
+      --danger: #ff6a78;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #15223b, var(--bg));
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) 1fr;
+      min-height: 100vh;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+    }
+
+    .section {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1, h2, h3 { margin: 0; }
+
+    .title h1 {
+      font-size: 1.2rem;
+      letter-spacing: 0.3px;
+    }
+
+    .title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: var(--text);
+      background: var(--panel-soft);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.primary { background: linear-gradient(180deg, #1d74ff, #0956d8); }
+    button.good { background: linear-gradient(180deg, #1a9d68, #0f8051); }
+    button.warn { background: linear-gradient(180deg, #b34256, #8d2b43); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    .card .label { font-size: 0.74rem; color: var(--muted); }
+    .card .value { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+
+    .map-shell {
+      position: relative;
+      min-height: 520px;
+      background: #0a1322;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .chip {
+      pointer-events: auto;
+      background: rgba(17, 25, 43, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .map-overlay input {
+      pointer-events: auto;
+      background: rgba(17, 25, 43, 0.9);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      width: min(320px, 40vw);
+      font-size: 0.8rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    .calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      font-size: 0.84rem;
+    }
+
+    .weekday {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.74rem;
+      margin-bottom: 2px;
+    }
+
+    .day {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-height: 56px;
+      padding: 6px;
+      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+      display: grid;
+      align-content: space-between;
+    }
+
+    .day.other { opacity: 0.45; }
+    .day.selected { outline: 2px solid var(--brand); }
+
+    .dots {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(89, 245, 174, 0.6);
+    }
+
+    .timeline {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      max-height: 230px;
+      overflow: auto;
+    }
+
+    .ride-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+    }
+
+    .ride-item.active { border-color: var(--brand); background: rgba(47, 181, 255, 0.08); }
+    .ride-top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.86rem; }
+    .ride-meta { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .map-shell { min-height: 58vh; }
+      .map-overlay input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="panel sidebar">
+      <section class="section title">
+        <h1>🚴 CycleAtlas</h1>
+        <p>Track rides in a live app shell, then relive them in a visual calendar timeline.</p>
+      </section>
+
+      <section class="section">
+        <h2 style="font-size: 1rem;">Main App Shell</h2>
+        <div class="controls">
+          <button id="startRide" class="primary">Start Ride</button>
+          <button id="addPoint" title="Manual point for desktop testing">Add Point</button>
+          <button id="stopRide" class="warn" disabled>Stop</button>
+          <button id="saveRide" class="good" disabled>Save</button>
+        </div>
+
+        <div class="stats">
+          <div class="card"><div class="label">Distance</div><div class="value" id="distanceValue">0.00 km</div></div>
+          <div class="card"><div class="label">Duration</div><div class="value" id="durationValue">00:00</div></div>
+          <div class="card"><div class="label">Points</div><div class="value" id="pointsValue">0</div></div>
+        </div>
+        <p class="hint">Use mobile GPS for live tracking. On desktop, tap <strong>Add Point</strong> to simulate movement. Rides are saved in your browser (localStorage).</p>
+      </section>
+
+      <section class="section">
+        <div class="calendar-head">
+          <h2 style="font-size: 1rem;">Calendar Timeline</h2>
+          <div>
+            <button id="prevMonth">◀</button>
+            <button id="nextMonth">▶</button>
+          </div>
+        </div>
+        <div id="monthLabel" style="font-weight: 700; margin-bottom: 8px;"></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </section>
+
+      <section class="section" style="border-bottom: none; overflow: hidden;">
+        <h3 style="font-size: 0.95rem; margin-bottom: 8px;">Voyages on <span id="selectedDateLabel">—</span></h3>
+        <ul class="timeline" id="timelineList"></ul>
+      </section>
+    </aside>
+
+    <section class="panel map-shell">
+      <div id="map"></div>
+      <div class="map-overlay">
+        <span class="chip" id="mapState">Map: ready</span>
+        <input id="mapsApiKey" placeholder="Optional Google Maps API key (loads live basemap)" />
+        <button id="loadGoogleMap">Load Google Map</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'cycle-atlas-rides-v1';
+    const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const state = {
+      map: null,
+      polyline: null,
+      previewPolyline: null,
+      watchId: null,
+      isTracking: false,
+      startTime: null,
+      timerId: null,
+      currentPath: [],
+      rides: loadRides(),
+      selectedDate: toISODate(new Date()),
+      calendarMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      activeRideId: null,
+      simulationAnchor: { lat: 37.7749, lng: -122.4194 }
+    };
+
+    const ui = {
+      startRide: document.getElementById('startRide'),
+      addPoint: document.getElementById('addPoint'),
+      stopRide: document.getElementById('stopRide'),
+      saveRide: document.getElementById('saveRide'),
+      distanceValue: document.getElementById('distanceValue'),
+      durationValue: document.getElementById('durationValue'),
+      pointsValue: document.getElementById('pointsValue'),
+      mapState: document.getElementById('mapState'),
+      mapsApiKey: document.getElementById('mapsApiKey'),
+      loadGoogleMap: document.getElementById('loadGoogleMap'),
+      calendarGrid: document.getElementById('calendarGrid'),
+      monthLabel: document.getElementById('monthLabel'),
+      prevMonth: document.getElementById('prevMonth'),
+      nextMonth: document.getElementById('nextMonth'),
+      timelineList: document.getElementById('timelineList'),
+      selectedDateLabel: document.getElementById('selectedDateLabel')
+    };
+
+    function init() {
+      initializeFallbackMap();
+      bindEvents();
+      renderCalendar();
+      renderTimeline();
+      updateTrackingStats();
+      autoLoadGoogleMapIfCached();
+    }
+
+    function bindEvents() {
+      ui.startRide.addEventListener('click', startRide);
+      ui.addPoint.addEventListener('click', addSimulatedPoint);
+      ui.stopRide.addEventListener('click', stopRide);
+      ui.saveRide.addEventListener('click', saveRide);
+      ui.prevMonth.addEventListener('click', () => shiftMonth(-1));
+      ui.nextMonth.addEventListener('click', () => shiftMonth(1));
+      ui.loadGoogleMap.addEventListener('click', () => {
+        const key = ui.mapsApiKey.value.trim();
+        if (!key) return setMapState('Paste API key first');
+        localStorage.setItem('cycle-atlas-google-maps-key', key);
+        loadGoogleMapsApi(key);
+      });
+    }
+
+    function initializeFallbackMap() {
+      const center = state.simulationAnchor;
+      state.map = {
+        center,
+        zoom: 13,
+        setCenter(next) { this.center = next; drawFallbackMap(); },
+        fitPath(path) {
+          if (!path.length) return;
+          const last = path[path.length - 1];
+          this.center = last;
+          drawFallbackMap();
+        }
+      };
+      drawFallbackMap();
+      setMapState('Fallback map active (load API key for Google basemap)');
+    }
+
+    function drawFallbackMap() {
+      const wrap = document.getElementById('map');
+      const points = state.currentPath;
+      const preview = state.rides.find(r => r.id === state.activeRideId)?.path || [];
+      const toPath = (pts, color) => {
+        if (pts.length < 2) return '';
+        const lines = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${(p.lng + 180) / 360 * 100} ${(90 - p.lat) / 180 * 100}`).join(' ');
+        return `<path d="${lines}" fill="none" stroke="${color}" stroke-width="0.45" vector-effect="non-scaling-stroke"/>`;
+      };
+
+      wrap.innerHTML = `
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%" style="display:block;background:radial-gradient(circle at 25% 10%, #18345f 0%, #0a1322 60%);">
+          <defs>
+            <pattern id="grid" width="5" height="5" patternUnits="userSpaceOnUse">
+              <path d="M 5 0 L 0 0 0 5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.08"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid)"></rect>
+          ${toPath(preview, '#59f5ae')}
+          ${toPath(points, '#2fb5ff')}
+        </svg>`;
+    }
+
+    function autoLoadGoogleMapIfCached() {
+      const cached = localStorage.getItem('cycle-atlas-google-maps-key');
+      if (!cached) return;
+      ui.mapsApiKey.value = cached;
+      loadGoogleMapsApi(cached);
+    }
+
+    function loadGoogleMapsApi(apiKey) {
+      if (window.google && window.google.maps) {
+        initializeGoogleMap();
+        return;
+      }
+      if (document.getElementById('googleMapsScript')) return;
+      const script = document.createElement('script');
+      script.id = 'googleMapsScript';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogleMap;
+      script.onerror = () => setMapState('Failed to load Google Maps (check key restrictions)');
+      document.head.appendChild(script);
+      setMapState('Loading Google Maps...');
+    }
+
+    function initializeGoogleMap() {
+      const mapContainer = document.getElementById('map');
+      mapContainer.innerHTML = '';
+      state.map = new google.maps.Map(mapContainer, {
+        center: state.currentPath[0] || state.simulationAnchor,
+        zoom: 13,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] }
+        ]
+      });
+
+      state.polyline = new google.maps.Polyline({
+        map: state.map,
+        path: state.currentPath,
+        geodesic: true,
+        strokeColor: '#2fb5ff',
+        strokeOpacity: 1,
+        strokeWeight: 4
+      });
+
+      state.previewPolyline = new google.maps.Polyline({
+        map: state.map,
+        path: [],
+        geodesic: true,
+        strokeColor: '#59f5ae',
+        strokeOpacity: 0.9,
+        strokeWeight: 4
+      });
+
+      syncMapPaths();
+      setMapState('Google map active');
+    }
+
+    function setMapState(message) {
+      ui.mapState.textContent = `Map: ${message}`;
+    }
+
+    function startRide() {
+      if (state.isTracking) return;
+      state.isTracking = true;
+      state.startTime = Date.now();
+      state.currentPath = [];
+      state.activeRideId = null;
+      updateTrackingStats();
+
+      ui.startRide.disabled = true;
+      ui.stopRide.disabled = false;
+      ui.saveRide.disabled = true;
+
+      state.timerId = setInterval(updateTrackingStats, 1000);
+
+      if (navigator.geolocation) {
+        state.watchId = navigator.geolocation.watchPosition(
+          pos => addPathPoint({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => setMapState('GPS unavailable — use Add Point to simulate'),
+          { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+        );
+      }
+      setMapState('Tracking ride');
+    }
+
+    function addSimulatedPoint() {
+      if (!state.isTracking) return;
+      const last = state.currentPath[state.currentPath.length - 1] || state.simulationAnchor;
+      const next = {
+        lat: last.lat + (Math.random() - 0.4) * 0.003,
+        lng: last.lng + (Math.random() - 0.4) * 0.003
+      };
+      addPathPoint(next);
+    }
+
+    function addPathPoint(point) {
+      state.currentPath.push(point);
+      if (state.map?.setCenter) state.map.setCenter(point);
+      syncMapPaths();
+      updateTrackingStats();
+    }
+
+    function stopRide() {
+      if (!state.isTracking) return;
+      state.isTracking = false;
+      clearInterval(state.timerId);
+      state.timerId = null;
+
+      if (state.watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(state.watchId);
+      }
+      state.watchId = null;
+
+      ui.startRide.disabled = false;
+      ui.stopRide.disabled = true;
+      ui.saveRide.disabled = state.currentPath.length < 2;
+      setMapState('Ride stopped. Save to timeline?');
+      updateTrackingStats();
+    }
+
+    function saveRide() {
+      if (state.currentPath.length < 2 || !state.startTime) return;
+      const endedAt = Date.now();
+      const ride = {
+        id: crypto.randomUUID(),
+        startedAt: state.startTime,
+        endedAt,
+        date: toISODate(new Date(state.startTime)),
+        durationSec: Math.round((endedAt - state.startTime) / 1000),
+        distanceKm: totalDistanceKm(state.currentPath),
+        path: state.currentPath
+      };
+      state.rides.unshift(ride);
+      persistRides();
+
+      state.currentPath = [];
+      state.startTime = null;
+      ui.saveRide.disabled = true;
+      syncMapPaths();
+
+      state.selectedDate = ride.date;
+      state.calendarMonth = new Date(new Date(ride.startedAt).getFullYear(), new Date(ride.startedAt).getMonth(), 1);
+      renderCalendar();
+      renderTimeline();
+      updateTrackingStats();
+      setMapState('Ride saved to timeline');
+    }
+
+    function updateTrackingStats() {
+      const duration = state.startTime ? Math.floor(((state.isTracking ? Date.now() : (state.startTime + (state.currentPath.length ? 0 : 0))) - state.startTime) / 1000) : 0;
+      const distance = totalDistanceKm(state.currentPath);
+      ui.durationValue.textContent = formatDuration(duration);
+      ui.distanceValue.textContent = `${distance.toFixed(2)} km`;
+      ui.pointsValue.textContent = String(state.currentPath.length);
+    }
+
+    function shiftMonth(direction) {
+      state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() + direction, 1);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = state.calendarMonth.getFullYear();
+      const month = state.calendarMonth.getMonth();
+      ui.monthLabel.textContent = state.calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+      const first = new Date(year, month, 1);
+      const start = new Date(first);
+      start.setDate(first.getDate() - first.getDay());
+
+      const rideCounts = state.rides.reduce((acc, ride) => {
+        acc[ride.date] = (acc[ride.date] || 0) + 1;
+        return acc;
+      }, {});
+
+      const cells = [];
+      const weekdayRow = DAY.map(d => `<div class="weekday">${d}</div>`).join('');
+      cells.push(weekdayRow);
+
+      for (let i = 0; i < 42; i++) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const iso = toISODate(date);
+        const count = rideCounts[iso] || 0;
+        const other = date.getMonth() !== month;
+        const selected = iso === state.selectedDate;
+
+        const dots = Array.from({ length: Math.min(count, 4) }).map(() => '<span class="dot"></span>').join('');
+        cells.push(`<button class="day ${other ? 'other' : ''} ${selected ? 'selected' : ''}" data-date="${iso}">
+          <span>${date.getDate()}</span>
+          <span class="dots">${dots}</span>
+        </button>`);
+      }
+
+      ui.calendarGrid.innerHTML = cells.join('');
+      ui.calendarGrid.querySelectorAll('.day').forEach(el => {
+        el.addEventListener('click', () => {
+          state.selectedDate = el.dataset.date;
+          state.activeRideId = null;
+          renderCalendar();
+          renderTimeline();
+          syncMapPaths();
+        });
+      });
+    }
+
+    function renderTimeline() {
+      ui.selectedDateLabel.textContent = new Date(state.selectedDate + 'T00:00:00').toLocaleDateString();
+      const rides = state.rides.filter(r => r.date === state.selectedDate).sort((a, b) => b.startedAt - a.startedAt);
+
+      if (!rides.length) {
+        ui.timelineList.innerHTML = `<li class="ride-item" style="cursor: default;">No voyages on this day yet.</li>`;
+        return;
+      }
+
+      ui.timelineList.innerHTML = rides.map(ride => {
+        const isActive = ride.id === state.activeRideId;
+        return `<li class="ride-item ${isActive ? 'active' : ''}" data-ride-id="${ride.id}">
+          <div class="ride-top">
+            <strong>${new Date(ride.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            <span>${ride.distanceKm.toFixed(2)} km</span>
+          </div>
+          <div class="ride-meta">${formatDuration(ride.durationSec)} · ${ride.path.length} points</div>
+        </li>`;
+      }).join('');
+
+      ui.timelineList.querySelectorAll('.ride-item').forEach(el => {
+        el.addEventListener('click', () => {
+          state.activeRideId = el.dataset.rideId;
+          renderTimeline();
+          syncMapPaths();
+        });
+      });
+    }
+
+    function syncMapPaths() {
+      const activeRide = state.rides.find(r => r.id === state.activeRideId);
+      const previewPath = activeRide ? activeRide.path : [];
+
+      if (window.google && window.google.maps && state.polyline && state.previewPolyline) {
+        state.polyline.setPath(state.currentPath);
+        state.previewPolyline.setPath(previewPath);
+
+        const pathToFocus = state.currentPath.length ? state.currentPath : previewPath;
+        if (pathToFocus.length) {
+          const bounds = new google.maps.LatLngBounds();
+          pathToFocus.forEach(p => bounds.extend(p));
+          state.map.fitBounds(bounds, 32);
+        }
+      } else {
+        drawFallbackMap();
+        const pathToFocus = state.currentPath.length ? state.currentPath : previewPath;
+        if (state.map.fitPath) state.map.fitPath(pathToFocus);
+      }
+    }
+
+    function loadRides() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function persistRides() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rides));
+    }
+
+    function toISODate(date) {
+      return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-');
+    }
+
+    function totalDistanceKm(path) {
+      if (path.length < 2) return 0;
+      let total = 0;
+      for (let i = 1; i < path.length; i++) {
+        total += haversineKm(path[i - 1], path[i]);
+      }
+      return total;
+    }
+
+    function haversineKm(a, b) {
+      const R = 6371;
+      const dLat = toRad(b.lat - a.lat);
+      const dLng = toRad(b.lng - a.lng);
+      const c1 = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(c1), Math.sqrt(1 - c1));
+    }
+
+    function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return h > 0
+        ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+        : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

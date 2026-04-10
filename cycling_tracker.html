@@ -281,8 +281,7 @@
       <div id="map"></div>
       <div class="map-overlay">
         <span class="chip" id="mapState">Map: ready</span>
-        <input id="mapsApiKey" placeholder="Optional MapTiler API key (loads live basemap)" />
-        <button id="loadMapTilerMap">Load MapTiler Map</button>
+        <button id="loadOpenStreetMap">Load OpenStreetMap</button>
       </div>
     </section>
   </main>
@@ -319,8 +318,7 @@
       durationValue: document.getElementById('durationValue'),
       pointsValue: document.getElementById('pointsValue'),
       mapState: document.getElementById('mapState'),
-      mapsApiKey: document.getElementById('mapsApiKey'),
-      loadMapTilerMap: document.getElementById('loadMapTilerMap'),
+      loadOpenStreetMap: document.getElementById('loadOpenStreetMap'),
       calendarGrid: document.getElementById('calendarGrid'),
       monthLabel: document.getElementById('monthLabel'),
       prevMonth: document.getElementById('prevMonth'),
@@ -335,7 +333,7 @@
       renderCalendar();
       renderTimeline();
       updateTrackingStats();
-      autoLoadMapTilerIfCached();
+      autoLoadOpenStreetMap();
     }
 
     function bindEvents() {
@@ -345,12 +343,7 @@
       ui.saveRide.addEventListener('click', saveRide);
       ui.prevMonth.addEventListener('click', () => shiftMonth(-1));
       ui.nextMonth.addEventListener('click', () => shiftMonth(1));
-      ui.loadMapTilerMap.addEventListener('click', () => {
-        const key = ui.mapsApiKey.value.trim();
-        if (!key) return setMapState('Paste API key first');
-        localStorage.setItem('cycle-atlas-maptiler-key', key);
-        loadLeafletWithMapTiler(key);
-      });
+      ui.loadOpenStreetMap.addEventListener('click', loadLeafletWithOpenStreetMap);
     }
 
     function initializeFallbackMap() {
@@ -368,7 +361,7 @@
       };
       drawFallbackMap();
       state.mapMode = 'fallback';
-      setMapState('Fallback map active (load API key for MapTiler basemap)');
+      setMapState('Fallback map active (load OpenStreetMap for full tiles)');
     }
 
     function drawFallbackMap() {
@@ -394,16 +387,14 @@
         </svg>`;
     }
 
-    function autoLoadMapTilerIfCached() {
-      const cached = localStorage.getItem('cycle-atlas-maptiler-key');
-      if (!cached) return;
-      ui.mapsApiKey.value = cached;
-      loadLeafletWithMapTiler(cached);
+    function autoLoadOpenStreetMap() {
+      const cached = localStorage.getItem('cycle-atlas-osm-enabled');
+      if (cached === 'true') loadLeafletWithOpenStreetMap();
     }
 
-    function loadLeafletWithMapTiler(apiKey) {
+    function loadLeafletWithOpenStreetMap() {
       if (state.leafletReady && window.L) {
-        initializeMapTilerMap(apiKey);
+        initializeOpenStreetMap();
         return;
       }
 
@@ -423,14 +414,14 @@
       script.defer = true;
       script.onload = () => {
         state.leafletReady = true;
-        initializeMapTilerMap(apiKey);
+        initializeOpenStreetMap();
       };
       script.onerror = () => setMapState('Failed to load Leaflet library');
       document.head.appendChild(script);
-      setMapState('Loading MapTiler map...');
+      setMapState('Loading OpenStreetMap...');
     }
 
-    function initializeMapTilerMap(apiKey) {
+    function initializeOpenStreetMap() {
       if (!window.L) return setMapState('Leaflet not available');
       const mapContainer = document.getElementById('map');
       mapContainer.innerHTML = '';
@@ -442,15 +433,10 @@
         13
       );
 
-      state.tileLayer = L.tileLayer(
-        `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`,
-        {
-          tileSize: 512,
-          zoomOffset: -1,
-          maxZoom: 20,
-          attribution: '&copy; OpenStreetMap contributors &copy; MapTiler'
-        }
-      ).addTo(state.map);
+      state.tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(state.map);
 
       state.polyline = L.polyline([], {
         color: '#2fb5ff',
@@ -466,7 +452,8 @@
 
       syncMapPaths();
       state.mapMode = 'leaflet';
-      setMapState('MapTiler map active');
+      localStorage.setItem('cycle-atlas-osm-enabled', 'true');
+      setMapState('OpenStreetMap active');
     }
 
     function setMapState(message) {

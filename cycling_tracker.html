@@ -281,8 +281,8 @@
       <div id="map"></div>
       <div class="map-overlay">
         <span class="chip" id="mapState">Map: ready</span>
-        <input id="mapsApiKey" placeholder="Optional Google Maps API key (loads live basemap)" />
-        <button id="loadGoogleMap">Load Google Map</button>
+        <input id="mapsApiKey" placeholder="Optional MapTiler API key (loads live basemap)" />
+        <button id="loadMapTilerMap">Load MapTiler Map</button>
       </div>
     </section>
   </main>
@@ -293,8 +293,11 @@
 
     const state = {
       map: null,
+      mapMode: 'fallback',
       polyline: null,
       previewPolyline: null,
+      leafletReady: false,
+      tileLayer: null,
       watchId: null,
       isTracking: false,
       startTime: null,
@@ -317,7 +320,7 @@
       pointsValue: document.getElementById('pointsValue'),
       mapState: document.getElementById('mapState'),
       mapsApiKey: document.getElementById('mapsApiKey'),
-      loadGoogleMap: document.getElementById('loadGoogleMap'),
+      loadMapTilerMap: document.getElementById('loadMapTilerMap'),
       calendarGrid: document.getElementById('calendarGrid'),
       monthLabel: document.getElementById('monthLabel'),
       prevMonth: document.getElementById('prevMonth'),
@@ -332,7 +335,7 @@
       renderCalendar();
       renderTimeline();
       updateTrackingStats();
-      autoLoadGoogleMapIfCached();
+      autoLoadMapTilerIfCached();
     }
 
     function bindEvents() {
@@ -342,11 +345,11 @@
       ui.saveRide.addEventListener('click', saveRide);
       ui.prevMonth.addEventListener('click', () => shiftMonth(-1));
       ui.nextMonth.addEventListener('click', () => shiftMonth(1));
-      ui.loadGoogleMap.addEventListener('click', () => {
+      ui.loadMapTilerMap.addEventListener('click', () => {
         const key = ui.mapsApiKey.value.trim();
         if (!key) return setMapState('Paste API key first');
-        localStorage.setItem('cycle-atlas-google-maps-key', key);
-        loadGoogleMapsApi(key);
+        localStorage.setItem('cycle-atlas-maptiler-key', key);
+        loadLeafletWithMapTiler(key);
       });
     }
 
@@ -364,7 +367,8 @@
         }
       };
       drawFallbackMap();
-      setMapState('Fallback map active (load API key for Google basemap)');
+      state.mapMode = 'fallback';
+      setMapState('Fallback map active (load API key for MapTiler basemap)');
     }
 
     function drawFallbackMap() {
@@ -390,66 +394,79 @@
         </svg>`;
     }
 
-    function autoLoadGoogleMapIfCached() {
-      const cached = localStorage.getItem('cycle-atlas-google-maps-key');
+    function autoLoadMapTilerIfCached() {
+      const cached = localStorage.getItem('cycle-atlas-maptiler-key');
       if (!cached) return;
       ui.mapsApiKey.value = cached;
-      loadGoogleMapsApi(cached);
+      loadLeafletWithMapTiler(cached);
     }
 
-    function loadGoogleMapsApi(apiKey) {
-      if (window.google && window.google.maps) {
-        initializeGoogleMap();
+    function loadLeafletWithMapTiler(apiKey) {
+      if (state.leafletReady && window.L) {
+        initializeMapTilerMap(apiKey);
         return;
       }
-      if (document.getElementById('googleMapsScript')) return;
+
+      if (!document.getElementById('leafletStylesheet')) {
+        const css = document.createElement('link');
+        css.id = 'leafletStylesheet';
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(css);
+      }
+
+      if (document.getElementById('leafletScript')) return;
       const script = document.createElement('script');
-      script.id = 'googleMapsScript';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
+      script.id = 'leafletScript';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.async = true;
       script.defer = true;
-      script.onload = initializeGoogleMap;
-      script.onerror = () => setMapState('Failed to load Google Maps (check key restrictions)');
+      script.onload = () => {
+        state.leafletReady = true;
+        initializeMapTilerMap(apiKey);
+      };
+      script.onerror = () => setMapState('Failed to load Leaflet library');
       document.head.appendChild(script);
-      setMapState('Loading Google Maps...');
+      setMapState('Loading MapTiler map...');
     }
 
-    function initializeGoogleMap() {
+    function initializeMapTilerMap(apiKey) {
+      if (!window.L) return setMapState('Leaflet not available');
       const mapContainer = document.getElementById('map');
       mapContainer.innerHTML = '';
-      state.map = new google.maps.Map(mapContainer, {
-        center: state.currentPath[0] || state.simulationAnchor,
-        zoom: 13,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        styles: [
-          { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] }
-        ]
-      });
+      state.map = L.map(mapContainer, {
+        zoomControl: true,
+        attributionControl: true
+      }).setView(
+        [state.currentPath[0]?.lat || state.simulationAnchor.lat, state.currentPath[0]?.lng || state.simulationAnchor.lng],
+        13
+      );
 
-      state.polyline = new google.maps.Polyline({
-        map: state.map,
-        path: state.currentPath,
-        geodesic: true,
-        strokeColor: '#2fb5ff',
-        strokeOpacity: 1,
-        strokeWeight: 4
-      });
+      state.tileLayer = L.tileLayer(
+        `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`,
+        {
+          tileSize: 512,
+          zoomOffset: -1,
+          maxZoom: 20,
+          attribution: '&copy; OpenStreetMap contributors &copy; MapTiler'
+        }
+      ).addTo(state.map);
 
-      state.previewPolyline = new google.maps.Polyline({
-        map: state.map,
-        path: [],
-        geodesic: true,
-        strokeColor: '#59f5ae',
-        strokeOpacity: 0.9,
-        strokeWeight: 4
-      });
+      state.polyline = L.polyline([], {
+        color: '#2fb5ff',
+        weight: 4,
+        opacity: 1
+      }).addTo(state.map);
+
+      state.previewPolyline = L.polyline([], {
+        color: '#59f5ae',
+        weight: 4,
+        opacity: 0.9
+      }).addTo(state.map);
 
       syncMapPaths();
-      setMapState('Google map active');
+      state.mapMode = 'leaflet';
+      setMapState('MapTiler map active');
     }
 
     function setMapState(message) {
@@ -634,15 +651,14 @@
       const activeRide = state.rides.find(r => r.id === state.activeRideId);
       const previewPath = activeRide ? activeRide.path : [];
 
-      if (window.google && window.google.maps && state.polyline && state.previewPolyline) {
-        state.polyline.setPath(state.currentPath);
-        state.previewPolyline.setPath(previewPath);
+      if (state.mapMode === 'leaflet' && window.L && state.polyline && state.previewPolyline) {
+        state.polyline.setLatLngs(state.currentPath.map(p => [p.lat, p.lng]));
+        state.previewPolyline.setLatLngs(previewPath.map(p => [p.lat, p.lng]));
 
         const pathToFocus = state.currentPath.length ? state.currentPath : previewPath;
         if (pathToFocus.length) {
-          const bounds = new google.maps.LatLngBounds();
-          pathToFocus.forEach(p => bounds.extend(p));
-          state.map.fitBounds(bounds, 32);
+          const bounds = L.latLngBounds(pathToFocus.map(p => [p.lat, p.lng]));
+          state.map.fitBounds(bounds, { padding: [32, 32] });
         }
       } else {
         drawFallbackMap();
